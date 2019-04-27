@@ -3,6 +3,14 @@
   <head>
     <meta http-equiv="Content-type" content="text/html; charset=utf-8">
     <meta content="width=device-width, initial-scale=1" name="viewport">
+    <script type="text/javascript">
+      // Small polyfill for customElements
+      // Credit: https://medium.com/@WebReflection/extending-built-in-elements-9dce404b75b4
+      if (!this.customElements)
+        document.write(
+          '<script src="//unpkg.com/document-register-element"><\x2fscript>'
+        );
+    </script>
     <script src="./src/app.js" type="module"></script>
   </head>
   <body>
