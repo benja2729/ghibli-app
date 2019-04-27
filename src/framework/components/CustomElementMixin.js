@@ -4,8 +4,14 @@ import Mutations, { MUTATIONS } from '../helpers/Mutations.js';
 
 const STATE = Symbol('__state__');
 
+const REGISTRY = new Map();
+
 export default function CustomElementMixin(HTMLClass, extendsElement) {
-  return class CustomElement extends HTMLClass {
+  if (REGISTRY.has(HTMLClass)) {
+    return REGISTRY.get(HTMLClass);
+  }
+
+  class CustomElement extends HTMLClass {
     static registerAs(name) {
       const options = {};
 
@@ -160,5 +166,8 @@ export default function CustomElementMixin(HTMLClass, extendsElement) {
       dispatchAction(this, name, detail, options);
     }
   }
+
+  REGISTRY.set(HTMLClass, CustomElement);
+  return CustomElement;
 }
 
