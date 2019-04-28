@@ -1,6 +1,6 @@
 export default class CustomTemplate extends HTMLTemplateElement {
   get root() {
-    return this.content.firstElementChild.cloneNode(true);
+    return this.content.cloneNode(true);
   }
 
   connectedCallback() {

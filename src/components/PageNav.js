@@ -46,7 +46,8 @@ export default class PageNav extends CustomElement {
     this.navList = navList;
 
     for (const item of ITEMS) {
-      navList.appendChild(template.render(item));
+      const root = template.render(item);
+      navList.append(...root.children);
     }
 
     this.appendChild(navList);
