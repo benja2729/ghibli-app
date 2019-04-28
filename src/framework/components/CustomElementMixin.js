@@ -1,6 +1,7 @@
 import { dispatchAction } from '../helpers/utils.js';
 import Actions, { ACTIONS } from '../helpers/Actions.js';
-import Mutations, { MUTATIONS } from '../helpers/Mutations.js';
+// import Mutations, { MUTATIONS } from '../helpers/Mutations.js';
+import Fragment from './Fragment.js';
 
 const STATE = Symbol('__state__');
 
@@ -12,14 +13,12 @@ export default function CustomElementMixin(HTMLClass, extendsElement) {
   }
 
   class CustomElement extends HTMLClass {
-    static registerAs(name) {
-      const options = {};
-
+    static registerAs(name, options = {}) {
       if (typeof extendsElement !== 'string' && HTMLClass !== HTMLElement) {
         throw new Error(
           `Must provide 'extendsElement' to CustomElementMixin for ${HTMLClass}`
         );
-      } else {
+      } else if (!options.extends) {
         options.extends = extendsElement;
       }
 
@@ -35,7 +34,7 @@ export default function CustomElementMixin(HTMLClass, extendsElement) {
 
       const {
         actions,
-        mutations,
+        // mutations,
         template,
         shadowMode = 'open',
         defaultState = {},
@@ -43,9 +42,9 @@ export default function CustomElementMixin(HTMLClass, extendsElement) {
       } = this.constructor;
 
       // Observe mutations
-      if (typeof mutations === 'object') {
-        this[MUTATIONS] = new Mutations(this, mutations);
-      }
+      // if (typeof mutations === 'object') {
+      //   this[MUTATIONS] = new Mutations(this, mutations);
+      // }
 
       // Attach shadow root
       if (typeof template === 'function') {
@@ -102,7 +101,7 @@ export default function CustomElementMixin(HTMLClass, extendsElement) {
     /**
      * Lifecycle hooks
      */
-    onInit() {console.log('onInit', this)}
+    onInit() {}
 
     connectedCallback() {
       if (this.isConnected) {
@@ -110,10 +109,9 @@ export default function CustomElementMixin(HTMLClass, extendsElement) {
         // instance-specific implementation
         this.onConnect();
       }
-      console.log('end of connectedCallback', this);
     }
 
-    onConnect() {console.log('onConnect', this)}
+    onConnect() {}
 
     disconnectedCallback() {
       if (!this.isConnected) {
@@ -128,10 +126,9 @@ export default function CustomElementMixin(HTMLClass, extendsElement) {
         // instance-specific implementation
         this.onDisconnect();
       }
-      console.log('end of disconnectedCallback', this);
     }
 
-    onDisconnect() {console.log('onDisconnect', this)}
+    onDisconnect() {}
 
     // Will be called before `connectedCallback` if attribute is defined on html
     attributeChangedCallback(attrName, oldValue, newValue) {
@@ -147,8 +144,6 @@ export default function CustomElementMixin(HTMLClass, extendsElement) {
           changeFn.call(this, newValue, oldValue);
         }
       }
-
-      console.log(`'${attrName}' changed`, this);
     }
 
     /**

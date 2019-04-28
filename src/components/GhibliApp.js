@@ -1,7 +1,13 @@
 import CustomElement from '../framework/CustomElement.js';
 
-export default class GhibliApp extends CustomElement {
+const ACTIONS = {
+  PAGE_NAV_SELECTED({ detail: pageName }) {
+    console.log(pageName);
+  }
+};
 
+export default class GhibliApp extends CustomElement {
+  static get actions() { return ACTIONS; }
 }
 GhibliApp.registerAs('ghibli-app');
 
