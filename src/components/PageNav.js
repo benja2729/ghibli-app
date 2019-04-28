@@ -14,6 +14,8 @@ const ITEMS = [{
 
 const NAV_LIST = document.createElement('ul');
 NAV_LIST.classList.add('page-nav--list');
+const NAV_ITEM = document.createElement('li');
+NAV_ITEM.classList.add('page-nav---item');
 
 const ACTIONS = {
   click: {
@@ -46,8 +48,10 @@ export default class PageNav extends CustomElement {
     this.navList = navList;
 
     for (const item of ITEMS) {
+      const navItem = NAV_ITEM.cloneNode();
       const root = template.render(item);
-      navList.append(...root.children);
+      navItem.append(...root.children);
+      navList.appendChild(navItem);
     }
 
     this.appendChild(navList);
