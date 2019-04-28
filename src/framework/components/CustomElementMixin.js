@@ -7,6 +7,12 @@ const STATE = Symbol('__state__');
 
 const REGISTRY = new Map();
 
+function attr2prop(attr) {
+  return attr.replace(/-(\w)/g, (_, char) => {
+    return char.toUpperCase();
+  });
+}
+
 export default function CustomElementMixin(HTMLClass, extendsElement) {
   if (REGISTRY.has(HTMLClass)) {
     return REGISTRY.get(HTMLClass);
@@ -23,10 +29,6 @@ export default function CustomElementMixin(HTMLClass, extendsElement) {
       }
 
       window.customElements.define(name, this, options);
-    }
-
-    static get boundAttributes() {
-      return this.observedAttributes;
     }
 
     constructor() {
@@ -77,7 +79,7 @@ export default function CustomElementMixin(HTMLClass, extendsElement) {
       }
 
       // setup state
-      this[STATE] = defaultState;
+      this[STATE] = { ...defaultState };
 
       // bind properties and attributes
       for (const attr of boundAttributes) {
@@ -134,7 +136,7 @@ export default function CustomElementMixin(HTMLClass, extendsElement) {
     attributeChangedCallback(attrName, oldValue, newValue) {
       if (oldValue !== newValue) {
         const { observedAttributes = [] } = this.constructor;
-        const changeFn = this[`${attrName}Changed`];
+        const changeFn = this[`${attr2prop(attrName)}Changed`];
 
         if (observedAttributes.includes(attrName)) {
           this.setState(attrName, newValue);

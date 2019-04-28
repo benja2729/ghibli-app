@@ -1,8 +1,4 @@
-import CustomElement, { CustomTemplate } from '../framework/CustomElement.js';
-
-customElements.define('page-nav-item', CustomTemplate, {
-  extends: 'template'
-});
+import CustomElement from '../framework/CustomElement.js';
 
 const ITEMS = [{
   text: 'one',
@@ -18,15 +14,14 @@ const NAV_ITEM = document.createElement('li');
 NAV_ITEM.classList.add('page-nav---item');
 
 const ACTIONS = {
-  click: {
-    // capture: true,
-    handleEvent(event, host) {
-      // event.stopPropagation();
-      const { target } = event;
+  click(event, host) {
+    event.stopPropagation();
+    const { target } = event;
 
-      if (target.hasAttribute('text-item')) {
-        host.dispatch('PAGE_NAV_SELECTED', target.textContent);
-      }
+    if (target.hasAttribute('navigate-to')) {
+      const to = target.getAttribute('navigate-to');
+      host.setAttribute('current-page', to);
+      host.dispatch('PAGE_NAV_SELECTED', to);
     }
   }
 };
@@ -34,8 +29,62 @@ const ACTIONS = {
 export default class PageNav extends CustomElement {
   static get actions() { return ACTIONS; }
 
+  static get observedAttributes() {
+    return ['current-page'];
+  }
+
+  static get defaultState() {
+    return {
+      items: ITEMS
+    };
+  }
+
   onConnect() {
+    this.itemTemplate = this.querySelector('template');
     this.renderNavList();
+  }
+
+  currentPageChanged(current) {
+    this.resolveSelected(current);
+  }
+
+  get templateHook() {
+    const { itemTemplate } = this;
+
+    if (itemTemplate) {
+      return itemTemplate.hook;
+    }
+  }
+
+  get items() {
+    return this.getState('items');
+  }
+
+  set items(items) {
+    this.setState('items', items);
+
+    if (this.itemTemplate) {
+      this.renderNavList();
+    }
+  }
+
+  resolveSelected(navTo) {
+    const { navList } = this;
+
+    if (navList) {
+      const items = navList.querySelectorAll('[selected]');
+
+      for (const item of items) {
+        item.removeAttribute('selected');
+      }
+
+      if (navTo) {
+        const selected = navList.querySelector(
+          `[navigate-to="${navTo}"]`
+        );
+        selected.setAttribute('selected', '');
+      }
+    }
   }
 
   renderNavList() {
@@ -43,17 +92,18 @@ export default class PageNav extends CustomElement {
       this.navList.remove();
     }
 
-    const template = this.firstElementChild;
+    const { itemTemplate, items } = this;
     const navList = NAV_LIST.cloneNode();
     this.navList = navList;
 
-    for (const item of ITEMS) {
+    for (const item of items) {
       const navItem = NAV_ITEM.cloneNode();
-      const root = template.render(item);
+      const root = itemTemplate.render(item);
       navItem.append(...root.children);
       navList.appendChild(navItem);
     }
 
+    this.resolveSelected(this.getAttribute('current-page'));
     this.appendChild(navList);
   }
 }

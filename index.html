@@ -11,13 +11,24 @@
           '<script src="//unpkg.com/document-register-element"><\x2fscript>'
         );
     </script>
+
+    <style type="text/css">
+      [is="page-nav"] > .page-nav--list {
+        padding: 0;
+        list-style: none;
+      }
+
+      [is="page-nav"] [selected] {
+        background-color: #00bcd4;
+      }
+    </style>
   </head>
   <body>
 
     <ghibli-app>
-      <nav is="page-nav">
+      <nav is="page-nav" current-page="one">
         <template is="page-nav-item" hook="nav-item">
-          <button nav-item="text:text"></button>
+          <button nav-item="page"></button>
         </template>
       </nav>
     </ghibli-app>
