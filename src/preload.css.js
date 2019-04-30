@@ -1,7 +1,7 @@
 import preloadStyles from './framework/preloadStyles.js';
 
-preloadStyles(
-  '/src/css/film-list.css',
-  '/src/components/GhibliApp.css'
+preloadStyles(import.meta,
+  '/css/film-list.css',
+  '/components/GhibliApp.css'
 );
 

@@ -1,5 +1,5 @@
+import { getBasePath } from './preloadStyles.js';
 
-const { origin } = window.location;
 const LINK = document.createElement('link');
 LINK.setAttribute('type', 'text/css');
 LINK.setAttribute('rel', 'stylesheet');
@@ -18,23 +18,18 @@ function importSingleStyle(url) {
  * ```
  * It's that easy!
  */
-export default function importStyles(paths) {
-  if (typeof paths === 'object') {
-    if (Array.isArray(paths)) {
+export default function importStyles(meta, ...paths) {
+  if (paths.length === 0) {
 
-      // import multiple paths
-      for (const path of paths) {
-        importSingleStyle(origin + path);
-      }
-    } else {
+    // Import from module
+    importSingleStyle(meta.url.replace(/\js$/, 'css'));
+  } else {
+    const base = getBasePath(meta);
 
-      // Import from module
-      importSingleStyle(paths.url.replace(/\js$/, 'css'));
+    // import multiple paths
+    for (const path of paths) {
+      importSingleStyle(`${base}${path}`);
     }
-  } else if (typeof paths === 'string') {
-
-    // import single path
-    importSingleStyle(origin + path);
   }
 }
 
