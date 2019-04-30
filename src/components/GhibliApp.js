@@ -1,7 +1,5 @@
-import CustomElement, { importStyles } from '../framework/CustomElement.js';
+import CustomElement from '../framework/CustomElement.js';
 import { ajax } from '../helpers/utils.js';
-
-importStyles(import.meta);
 
 const { history, location } = window;
 

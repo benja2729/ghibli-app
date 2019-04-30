@@ -1,3 +1,8 @@
+
+ghibli-app {
+  display: flex;
+}
+
 .film-list {
   width: 30%;
   min-width: 15rem;
