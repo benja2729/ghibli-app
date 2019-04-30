@@ -4,10 +4,11 @@ import { ajax } from '../helpers/utils.js';
 const { history, location } = window;
 
 const ACTIONS = {
-  NAV_ITEM_SELECTED({ detail: { id: currentPage, title } }) {
+  NAV_ITEM_SELECTED({ detail: film }, host) {
+    const { id: currentPage, title } = film;
     const state = { currentPage };
     history.pushState(state, title, `#/page/${currentPage}`);
-    document.title = title;
+    host.updateViewedFilm();
   }
 };
 
@@ -25,7 +26,7 @@ export default class GhibliApp extends CustomElement {
     super();
     window.addEventListener('popstate', (event) => {
       const { state: { currentPage } } = event;
-      this.pageNav.setAttribute('current-page', currentPage);
+      this.updateViewedFilm();
     });
   }
 
@@ -33,23 +34,45 @@ export default class GhibliApp extends CustomElement {
     return this.getState('pageNav', () => this.querySelector('nav[is="page-nav"]'));
   }
 
+  get filmDetails() {
+    return this.getState('filmDetails', () => this.querySelector(
+      'section[is="ghibli-film-details"]'
+    ));
+  }
+
+  get currentFilm() {
+    const filmId = getPageId();
+
+    if (filmId) {
+      return this.films.find(film => film.id === filmId);
+    }
+
+    return this.films[0];
+  }
+
   getFilms() {
-    // TODO: Add a Channel class to allow subscriptions for updates like these
     return ajax('https://ghibliapi.herokuapp.com/films');
   }
 
-  async onConnect() {
-    const pageId = getPageId();
-    const films = await this.getFilms();
-    const currentPage = films.find(film => film.id === pageId);
-    const { pageNav } = this;
-    pageNav.items = films;
+  // TODO: Add a Channel class to allow subscriptions for updates like these
+  updateViewedFilm() {
+    const { pageNav, filmDetails, currentFilm } = this;
+    const { id, title } = currentFilm;
 
-    if (currentPage) {
-      pageNav.setAttribute('current-page', currentPage.id);
-      document.title = currentPage.title;
-    }
+    pageNav.setAttribute('current-page', id);
+    filmDetails.film = currentFilm;
+    filmDetails.setAttribute('film', id);
+    document.title = title;
+  }
+
+  async onConnect() {
+    const { pageNav } = this;
+    const films = await this.getFilms();
+    this.films = films;
+    pageNav.items = films;
+    this.updateViewedFilm();
   }
 }
+
 GhibliApp.registerAs('ghibli-app');
 

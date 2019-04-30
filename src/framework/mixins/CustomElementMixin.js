@@ -1,7 +1,6 @@
 import { dispatchAction } from '../helpers/utils.js';
 import Actions, { ACTIONS } from '../helpers/Actions.js';
 // import Mutations, { MUTATIONS } from '../helpers/Mutations.js';
-import Fragment from './Fragment.js';
 
 const STATE = Symbol('__state__');
 
@@ -55,8 +54,6 @@ export default function CustomElementMixin(HTMLClass, extendsElement) {
 
         if (shadow instanceof HTMLTemplateElement) {
           root.append(shadow.content.cloneNode(true));
-        } else if (shadow instanceof Fragment) {
-          shadow.attachTo(root);
         } else if (typeof shadow === 'string') {
           root.innerHTML = shadow;
         }
@@ -135,10 +132,10 @@ export default function CustomElementMixin(HTMLClass, extendsElement) {
     // Will be called before `connectedCallback` if attribute is defined on html
     attributeChangedCallback(attrName, oldValue, newValue) {
       if (oldValue !== newValue) {
-        const { observedAttributes = [] } = this.constructor;
+        const { boundAttributes = [] } = this.constructor;
         const changeFn = this[`${attr2prop(attrName)}Changed`];
 
-        if (observedAttributes.includes(attrName)) {
+        if (boundAttributes.includes(attrName)) {
           this.setState(attrName, newValue);
         }
 

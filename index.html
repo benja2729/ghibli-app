@@ -25,17 +25,53 @@
             <article class="film-list--item"
               nav-item
               attr="page:id"
-              action="onclick:NAV_ITEM_SELECTED"
-            >
-              <h1 nav-item text="title"></h1>
-              <span nav-item text="director"></span>
+              action="onclick:NAV_ITEM_SELECTED">
+
+              <strong class="film-list--title"
+                nav-item text="title"
+                ></strong>
+
+              <span class="film-list--sub-title"
+                nav-item text="director"
+                ></span>
             </article>
           </template>
         </nav>
       </aside>
 
-      <section>
+      <section is="ghibli-film-details">
+        <template is="custom-template" hook="film-detail">
+          <header class="film-details--header">
+            <h1 class="film-details--title"
+              film-detail
+              text="title"></h1>
 
+            <span class="film-details--subheader"
+              film-detail
+              text="release_date"></span>
+          </header>
+
+          <p class="film-details--description"
+            film-detail
+            text="description"></p>
+
+          <dl class="film-details--meta">
+            <dt class="meta-term">Director</dt>
+            <dd class="meta-def"
+              film-detail
+              text="director"></dd>
+
+            <dt class="meta-term">Producer</dt>
+            <dd class="meta-def"
+              film-detail
+              text="producer"></dd>
+
+            <dt class="meta-term">Rotten Tomatoes Score</dt>
+            <dd class="meta-def"
+              film-detail
+              text="rt_score"></dd>
+          </dl>
+        </template>
       </section>
     </ghibli-app>
 

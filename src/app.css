@@ -1,15 +1,30 @@
+html {
+  --spacing-xsm: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 3rem;
+  --spacing-xxl: 6rem;
+  --color-primary: #009688;
+  --color-neutral--light: #EEE;
+  --color-neutral: #D3D3D3;
+  --color-text-neutral: #808080;
+}
 
 ghibli-app {
   display: flex;
+  margin-block-start: var(--spacing-lg);
 }
 
 .film-list {
   width: 30%;
   min-width: 15rem;
+  height: -webkit-fill-available;
+  overflow: auto;
 }
 
 .film-list .page-nav--item {
-  margin-block-end: 0.25rem;
+  margin-block-end: var(--spacing-xsm);
 }
 
 .film-list .page-nav--item:last-of-type {
@@ -17,26 +32,86 @@ ghibli-app {
 }
 
 .film-list--item {
-  padding: 0.5rem;
-  border: 1px solid lightgrey;
   cursor: pointer;
+  padding: var(--spacing-sm);
+  border-style: solid;
+  border-width: 1px;
+  border-color: var(--color-neutral);
+}
+
+.film-list--title {
+  display: block;
+  margin-block-start: 0;
+  margin-block-end: var(--spacing-sm);
+}
+
+.film-list--sub-title {
+  font-size: smaller;
+  color: var(--color-text-neutral);
 }
 
 [selected] > .film-list--item {
-  background-color: #FF5722;
+  background-color: var(--color-primary);
 }
 
-[selected] > .film-list--item span {
+[selected] .film-list--sub-title {
   color: unset;
 }
 
-.film-list--item h1 {
-  margin-block-start: 0;
-  margin-block-end: 0.5rem;
+[is="ghibli-film-details"] {
+  padding-inline-start: var(--spacing-lg);
+  padding-inline-end: var(--spacing-lg);
 }
 
-.film-list--item span {
-  font-size: smaller;
-  color: grey;
+.film-details--header {
+  display: flex;
+  justify-content: space-between;
+  padding-block-end: var(--spacing-sm);
+  margin-block-end: var(--spacing-lg);
+  border-block-end-style: solid;
+  border-block-end-width: 1px;
+  border-block-end-color: var(--color-neutral);
+}
+
+.film-details--title {
+  margin: 0;
+}
+
+.film-details--subheader {
+  align-self: flex-end;
+  color: var(--color-text-neutral);
+}
+
+.film-details--description {
+  font-size: 1.2em;
+}
+
+.film-details--meta {
+  display: flex;
+  flex-wrap: wrap;
+  padding: var(--spacing-md);
+  border-width: var(--spacing-xsm);
+  border-style: double;
+  border-color: var(--color-neutral);
+  background-color: var(--color-neutral--light);
+}
+
+.film-details--meta > .meta-term,
+.film-details--meta > .meta-def {
+
+}
+
+.film-details--meta > .meta-term {
+  font-weight: bold;
+  flex-basis: 33%;
+}
+
+.film-details--meta > .meta-term:after {
+  content: ':';
+}
+
+.film-details--meta > .meta-def {
+  flex-basis: 66%;
+  margin: 0;
 }
 
