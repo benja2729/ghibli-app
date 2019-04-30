@@ -1,4 +1,40 @@
+import { dispatchAction } from '../helpers/utils.js';
+
+const DELEGATED_STRATEGIES = {
+  attr(segment, value, context) {
+    const [ attr, prop ] = value.split(':');
+
+    if (attr && prop) {
+      segment.setAttribute(attr, context[prop]);
+    }
+  },
+
+  text(segment, prop, context) {
+    segment.textContent = context[prop];
+  },
+
+  action(segment, prop, context) {
+    const [ event, action ] = prop.split(':');
+
+    if (event && action) {
+      segment[event] = function() {
+        dispatchAction(this, action, context);
+      }
+    }
+  }
+};
+
 export default class CustomTemplate extends HTMLTemplateElement {
+  static get delegatedStrategies() {
+    return DELEGATED_STRATEGIES;
+  }
+
+  static create(baseClass) {
+    return document.createElement('template', {
+      is: baseClass
+    });
+  }
+
   get hook() {
     return this.getAttribute('hook') || 'data-strategy';
   }
@@ -27,17 +63,39 @@ export default class CustomTemplate extends HTMLTemplateElement {
 
     for (const segment of segments) {
       const strategy = segment.getAttribute(hook);
-      const {
-        [`${strategy}Strategy`]: strategyFn
-      } = this;
-      const params = [this, segment, context, this.parentElement];
-      segment.removeAttribute(hook);
 
-      if (typeof strategyFn === 'function') {
-        strategyFn.call(...params);
+      if (strategy) {
+        this.applyStrategy(strategy, segment, context);
       } else {
-        this.unknownStrategy(...params);
+        this.delegate(segment, context);
       }
+
+      segment.removeAttribute(hook);
+    }
+  }
+
+  delegate(segment, context) {
+    const params = [segment, context];
+    const { delegatedStrategies } = this.constructor;
+
+    for (const [strategy, strategyFn] of Object.entries(delegatedStrategies)) {
+      const value = segment.getAttribute(strategy);
+      if (!value) continue;
+      strategyFn.call(this, segment, value, context);
+      segment.removeAttribute(strategy);
+    }
+  }
+
+  applyStrategy(strategy, segment, context) {
+    const params = [segment, context, this.parentElement];
+    const {
+      [`${strategy}Strategy`]: strategyFn
+    } = this;
+
+    if (typeof strategyFn === 'function') {
+      strategyFn.call(this, ...params);
+    } else {
+      this.unknownStrategy(...params);
     }
   }
 
@@ -48,4 +106,8 @@ export default class CustomTemplate extends HTMLTemplateElement {
     );
   }
 }
+
+customElements.define('custom-template', CustomTemplate, {
+  extends: 'template'
+});
 

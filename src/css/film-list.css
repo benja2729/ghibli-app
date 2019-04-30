@@ -1,0 +1,37 @@
+.film-list {
+  width: 30%;
+  min-width: 15rem;
+}
+
+.film-list .page-nav--item {
+  margin-block-end: 0.25rem;
+}
+
+.film-list .page-nav--item:last-of-type {
+  margin-block-end: 0;
+}
+
+.film-list--item {
+  padding: 0.5rem;
+  border: 1px solid lightgrey;
+  cursor: pointer;
+}
+
+[selected] > .film-list--item {
+  background-color: #FF5722;
+}
+
+[selected] > .film-list--item span {
+  color: unset;
+}
+
+.film-list--item h1 {
+  margin-block-start: 0;
+  margin-block-end: 0.5rem;
+}
+
+.film-list--item span {
+  font-size: smaller;
+  color: grey;
+}
+

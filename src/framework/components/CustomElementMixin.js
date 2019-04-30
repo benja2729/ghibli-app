@@ -151,8 +151,19 @@ export default function CustomElementMixin(HTMLClass, extendsElement) {
     /**
      * Instance methods
      */
-    getState(attr) {
-      return this[STATE][attr];
+    getState(attr, defaultValue) {
+      let { [STATE]: state } = this;
+
+      if (state[attr]) {
+        return state[attr];
+      }
+
+      const value = typeof defaultValue === 'function' ?
+        defaultValue.call(this) :
+        defaultValue;
+
+      this.setState(attr, value);
+      return value;
     }
 
     setState(attr, value) {

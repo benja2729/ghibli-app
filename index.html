@@ -3,6 +3,7 @@
   <head>
     <meta http-equiv="Content-type" content="text/html; charset=utf-8">
     <meta content="width=device-width, initial-scale=1" name="viewport">
+    <title>Ghibli App</title>
     <script type="text/javascript">
       // Small polyfill for customElements
       // Credit: https://medium.com/@WebReflection/extending-built-in-elements-9dce404b75b4
@@ -12,25 +13,29 @@
         );
     </script>
 
-    <style type="text/css">
-      [is="page-nav"] > .page-nav--list {
-        padding: 0;
-        list-style: none;
-      }
-
-      [is="page-nav"] [selected] {
-        background-color: #00bcd4;
-      }
-    </style>
+    <script src="./src/preload.css.js" type="module"></script>
   </head>
   <body>
 
     <ghibli-app>
-      <nav is="page-nav" current-page="one">
-        <template is="page-nav-item" hook="nav-item">
-          <button nav-item="page"></button>
-        </template>
-      </nav>
+      <aside class="film-list">
+        <nav is="page-nav">
+          <template is="custom-template" hook="nav-item">
+            <article class="film-list--item"
+              nav-item
+              attr="page:id"
+              action="onclick:NAV_ITEM_SELECTED"
+            >
+              <h1 nav-item text="title"></h1>
+              <span nav-item text="director"></span>
+            </article>
+          </template>
+        </nav>
+      </aside>
+
+      <section>
+
+      </section>
     </ghibli-app>
 
     <script src="./src/app.js" type="module"></script>
