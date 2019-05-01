@@ -1,6 +1,9 @@
 import CustomElement from '../framework/CustomElement.js';
 import { ajax } from '../helpers/utils.js';
 
+import '../framework/components/PageNav.js';
+import './GhibliFilmDetails.js';
+
 const { history, location } = window;
 
 const ACTIONS = {
