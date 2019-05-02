@@ -167,6 +167,10 @@ export default function CustomElementMixin(HTMLClass, extendsElement) {
       this[STATE][attr] = value;
     }
 
+    on(actionName, config) {
+      this[ACTIONS].addAction(actionName, config);
+    }
+
     dispatch(name, detail, options) {
       dispatchAction(this, name, detail, options);
     }
