@@ -34,7 +34,7 @@ export default function CustomElementMixin(HTMLClass, extendsElement) {
       super();
 
       const {
-        actions,
+        actions = {},
         // mutations,
         template,
         shadowMode = 'open',
@@ -71,9 +71,7 @@ export default function CustomElementMixin(HTMLClass, extendsElement) {
       }
 
       // setup actions
-      if (typeof actions === 'object') {
-        this[ACTIONS] = new Actions(this, actions);
-      }
+      this[ACTIONS] = new Actions(this, actions);
 
       // setup state
       this[STATE] = { ...defaultState };
@@ -104,7 +102,6 @@ export default function CustomElementMixin(HTMLClass, extendsElement) {
 
     connectedCallback() {
       if (this.isConnected) {
-
         // instance-specific implementation
         this.onConnect();
       }
@@ -155,9 +152,10 @@ export default function CustomElementMixin(HTMLClass, extendsElement) {
         return state[attr];
       }
 
-      const value = typeof defaultValue === 'function' ?
-        defaultValue.call(this) :
-        defaultValue;
+      const value =
+        typeof defaultValue === 'function'
+          ? defaultValue.call(this)
+          : defaultValue;
 
       this.setState(attr, value);
       return value;
@@ -167,11 +165,11 @@ export default function CustomElementMixin(HTMLClass, extendsElement) {
       this[STATE][attr] = value;
     }
 
-    on(actionName, config) {
+    addActionListener(actionName, config) {
       this[ACTIONS].addAction(actionName, config);
     }
 
-    dispatch(name, detail, options) {
+    dispatchAction(name, detail, options) {
       dispatchAction(this, name, detail, options);
     }
   }
@@ -179,4 +177,3 @@ export default function CustomElementMixin(HTMLClass, extendsElement) {
   REGISTRY.set(HTMLClass, CustomElement);
   return CustomElement;
 }
-

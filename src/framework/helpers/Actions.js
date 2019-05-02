@@ -14,51 +14,42 @@ export default class Actions {
 
   addAction(name, config) {
     const { [HOST]: host } = this;
+    let callback;
 
     switch (typeof config) {
       case 'object':
         if (!(config || Array.isArray(config))) {
+          callback = config.handleEvent;
           host.addEventListener(name, this, config);
           break;
         }
       case 'function':
+        callback = config;
         host.addEventListener(name, this, false);
         break;
-      default: throw new TypeError(
-        `[Actions] Expected action '${name}' to be called with a function or object`
-      );
+      default:
+        throw new TypeError(
+          `[Actions] Expected action '${name}' to be called with a function or object`
+        );
     }
 
-    this[ACTIONS][name] = config;
-  }
-
-  call(name, event) {
-    const {
-      [HOST]: host,
-      [ACTIONS]: { [name]: callback }
-    } = this;
-    const props = [this, event, host];
-
-    if (typeof callback === 'function') {
-      callback.call(...props);
-    } else if (typeof callback === 'object') {
-      callback.handleEvent.call(...props);
-    }
+    this[ACTIONS][name] = callback;
   }
 
   handleEvent(event) {
-    this.call(event.type, event);
+    const {
+      [HOST]: host,
+      [ACTIONS]: { [event.type]: callback }
+    } = this;
+
+    callback.call(this, event, host);
   }
 
   destroy() {
-    const {
-      [HOST]: host,
-      [ACTIONS]: actions
-    } = this;
+    const { [HOST]: host, [ACTIONS]: actions } = this;
 
     for (const action of Object.keys(actions)) {
       host.removeEventListener(action, this);
     }
   }
 }
-

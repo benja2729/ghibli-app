@@ -9,27 +9,23 @@ const NAV_ITEM_SELECTOR = 'page-nav--item';
 const NAV_ITEM = document.createElement('li');
 NAV_ITEM.classList.add(NAV_ITEM_SELECTOR);
 
-const ACTIONS = {
-  click(event, host) {
-    event.stopPropagation();
-    const { target } = event;
-    const pageItem = target.closest('[page]');
+function click(event, host) {
+  event.stopPropagation();
+  const { target } = event;
+  const pageItem = target.closest('[page]');
 
-    if (pageItem) {
-      host.setAttribute('current-page', pageItem.getAttribute('page'));
-    } else {
-      const navItem = target.closest(`.${NAV_ITEM_SELECTOR}`);
+  if (pageItem) {
+    host.setAttribute('current-page', pageItem.getAttribute('page'));
+  } else {
+    const navItem = target.closest(`.${NAV_ITEM_SELECTOR}`);
 
-      if (navItem) {
-        host.selectedItem = navItem;
-      }
+    if (navItem) {
+      host.selectedItem = navItem;
     }
   }
-};
+}
 
 export default class PageNav extends CustomElement {
-  static get actions() { return ACTIONS; }
-
   static get observedAttributes() {
     return ['current-page'];
   }
@@ -40,6 +36,11 @@ export default class PageNav extends CustomElement {
     };
   }
 
+  constructor() {
+    super();
+    this.addActionListener('click', click);
+  }
+
   onConnect() {
     this.renderNavList();
   }
@@ -48,13 +49,17 @@ export default class PageNav extends CustomElement {
   currentPageChanged(page) {
     const { navList } = this;
 
-    if (!navList) { return; }
+    if (!navList) {
+      return;
+    }
     const pageItem = navList.querySelector(`[page="${page}"]`);
 
     if (pageItem) {
       this.selectedItem = pageItem.closest(`.${NAV_ITEM_SELECTOR}`);
     } else {
-      console.warn('[PageNav] template must set `[page]` attribute to update selected via `[current-page]`');
+      console.warn(
+        '[PageNav] template must set `[page]` attribute to update selected via `[current-page]`'
+      );
     }
   }
 
@@ -111,4 +116,3 @@ export default class PageNav extends CustomElement {
 PageNav.registerAs('page-nav', {
   extends: 'nav'
 });
-
