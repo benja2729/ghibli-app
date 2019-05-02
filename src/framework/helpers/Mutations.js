@@ -1,15 +1,26 @@
+import { attr2prop } from './utils.js';
+
 export const MUTATIONS = Symbol('__mutations__');
+
+function attributeChanged(mutation) {
+  const { attributeName, target: host, oldValue } = mutation;
+  const newValue = host.getAttribute(attributeName);
+
+  if (oldValue !== newValue) {
+    const changeFn = host[`${attr2prop(attributeName)}Changed`];
+
+    if (typeof changeFn === 'function') {
+      changeFn.call(host, newValue, oldValue);
+    }
+  }
+}
 
 export default class Mutations {
   constructor(host, mutations = {}) {
     const {
-      observedAttributes
-    } = host.constructor;
-
-    const {
-      attributes = false,
-      attributeFilter = observedAttributes,
-      attributeOldValue,
+      attributes = true,
+      attributeFilter,
+      attributeOldValue = true,
 
       characterData,
       characterDataOldValue,
@@ -23,7 +34,7 @@ export default class Mutations {
       subtree
     };
 
-    if (typeof attributes === 'function') {
+    if (attributes) {
       Object.assign(config, {
         attributes: true,
         attributeOldValue,
@@ -44,15 +55,22 @@ export default class Mutations {
 
     function handleMutation(mutationList) {
       for (const mutation of mutationList) {
-        switch (mutation.type) {
+        const { target, type } = mutation;
+        const params = [host, mutation, target];
+
+        switch (type) {
           case 'attributes':
-            attributes.call(host, mutation, host);
+            attributeChanged(mutation);
+
+            if (typeof attributes === 'function') {
+              attributes.call(...params);
+            }
             break;
           case 'characterData':
-            characterData.call(host, mutation, host);
+            characterData.call(...params);
             break;
           case 'childList':
-            childList.call(host, mutation, host);
+            childList.call(...params);
             break;
         }
       }

@@ -1,16 +1,10 @@
-import { dispatchAction } from '../helpers/utils.js';
 import Actions, { ACTIONS } from '../helpers/Actions.js';
-// import Mutations, { MUTATIONS } from '../helpers/Mutations.js';
+import Mutations, { MUTATIONS } from '../helpers/Mutations.js';
+import { dispatchAction, attachBoundAttributes } from '../helpers/utils.js';
 
 const STATE = Symbol('__state__');
 
 const REGISTRY = new Map();
-
-function attr2prop(attr) {
-  return attr.replace(/-(\w)/g, (_, char) => {
-    return char.toUpperCase();
-  });
-}
 
 export default function CustomElementMixin(HTMLClass, extendsElement) {
   if (REGISTRY.has(HTMLClass)) {
@@ -30,22 +24,24 @@ export default function CustomElementMixin(HTMLClass, extendsElement) {
       window.customElements.define(name, this, options);
     }
 
+    static get boundAttributes() {
+      return this.observedAttributes;
+    }
+
     constructor() {
       super();
 
       const {
         actions = {},
-        // mutations,
+        mutations,
         template,
         shadowMode = 'open',
         defaultState = {},
-        boundAttributes = []
+        boundAttributes
       } = this.constructor;
 
       // Observe mutations
-      // if (typeof mutations === 'object') {
-      //   this[MUTATIONS] = new Mutations(this, mutations);
-      // }
+      this[MUTATIONS] = new Mutations(this, mutations);
 
       // Attach shadow root
       if (typeof template === 'function') {
@@ -77,19 +73,7 @@ export default function CustomElementMixin(HTMLClass, extendsElement) {
       this[STATE] = { ...defaultState };
 
       // bind properties and attributes
-      for (const attr of boundAttributes) {
-        Object.defineProperty(this, attr, {
-          iterable: true,
-          configurable: true,
-          get() {
-            return this.getState(attr) || this.getAttribute(attr);
-          },
-          set(value) {
-            this.setState(attr, value);
-            this.setAttribute(attr, value);
-          }
-        });
-      }
+      attachBoundAttributes(this, boundAttributes);
 
       // instance-specific implementation
       this.onInit();
@@ -111,13 +95,8 @@ export default function CustomElementMixin(HTMLClass, extendsElement) {
 
     disconnectedCallback() {
       if (!this.isConnected) {
-        if (this[ACTIONS]) {
-          this[ACTIONS].destroy();
-        }
-
-        if (this[MUTATIONS]) {
-          this[MUTATIONS].destroy();
-        }
+        this[ACTIONS].destroy();
+        this[MUTATIONS].destroy();
 
         // instance-specific implementation
         this.onDisconnect();
@@ -125,22 +104,6 @@ export default function CustomElementMixin(HTMLClass, extendsElement) {
     }
 
     onDisconnect() {}
-
-    // Will be called before `connectedCallback` if attribute is defined on html
-    attributeChangedCallback(attrName, oldValue, newValue) {
-      if (oldValue !== newValue) {
-        const { boundAttributes = [] } = this.constructor;
-        const changeFn = this[`${attr2prop(attrName)}Changed`];
-
-        if (boundAttributes.includes(attrName)) {
-          this.setState(attrName, newValue);
-        }
-
-        if (typeof changeFn === 'function') {
-          changeFn.call(this, newValue, oldValue);
-        }
-      }
-    }
 
     /**
      * Instance methods
