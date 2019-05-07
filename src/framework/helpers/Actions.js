@@ -1,5 +1,4 @@
-export const ACTIONS = Symbol('__actions__');
-
+const ACTIONS = Symbol('__actions__');
 const HOST = Symbol('__host__');
 
 export default class Actions {
@@ -18,7 +17,7 @@ export default class Actions {
 
     switch (typeof config) {
       case 'object':
-        if (!(config || Array.isArray(config))) {
+        if (!config || !Array.isArray(config)) {
           callback = config.handleEvent;
           host.addEventListener(name, this, config);
           break;

@@ -1,8 +1,9 @@
-import Actions, { ACTIONS } from '../helpers/Actions.js';
+import Actions from '../helpers/Actions.js';
 import Mutations, { MUTATIONS } from '../helpers/Mutations.js';
 import { dispatchAction, attachBoundAttributes } from '../helpers/utils.js';
 
-const STATE = Symbol('__state__');
+const STATE = Symbol.for('__state__');
+const ACTIONS = Symbol.for('__actions__');
 
 const REGISTRY = new Map();
 

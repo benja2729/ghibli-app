@@ -1,5 +1,5 @@
 import CustomElement from '../framework/CustomElement.js';
-import { ajax } from '../helpers/utils.js';
+import store from '../store.js';
 
 import '../framework/components/PageNav.js';
 import './GhibliFilmDetails.js';
@@ -7,10 +7,14 @@ import './GhibliFilmDetails.js';
 const { history, location } = window;
 
 const ACTIONS = {
-  NAV_ITEM_SELECTED({ detail: film }, host) {
-    const { id: currentPage, title } = film;
+  PUSH_HISTORY_STATE({ detail: { id: currentPage, title } }, host) {
     const state = { currentPage };
     history.pushState(state, title, `#/page/${currentPage}`);
+  },
+
+  NAV_ITEM_SELECTED({ detail: film }, host) {
+    host.dispatchAction('PUSH_HISTORY_STATE', film);
+    host.currentFilm = film;
     host.updateViewedFilm();
   }
 };
@@ -44,34 +48,40 @@ export default class GhibliApp extends CustomElement {
   }
 
   get currentFilm() {
-    const filmId = getPageId();
+    let film = this.getState('currentFilm');
 
-    if (filmId) {
-      return this.films.find(film => film.id === filmId);
+    if (!film) {
+      const filmId = getPageId();
+      
+      if (filmId) {
+        film = store.films.find(film => film.id === filmId);
+      } else {
+        film = store.films[0];
+        this.dispatchAction('PUSH_HISTORY_STATE', film);
+      }
+
+      this.setState('currentFilm', film);
     }
 
-    return this.films[0];
+    return film;
   }
 
-  getFilms() {
-    return ajax('https://ghibliapi.herokuapp.com/films');
+  set currentFilm(film) {
+    this.setState('currentFilm', film);
   }
 
   // TODO: Add a Channel class to allow subscriptions for updates like these
   updateViewedFilm() {
-    const { pageNav, filmDetails, currentFilm } = this;
-    const { id, title } = currentFilm;
+    const { pageNav, filmDetails, currentFilm: { id, title } } = this;
 
     pageNav.setAttribute('current-page', id);
-    filmDetails.film = currentFilm;
     filmDetails.setAttribute('film', id);
     document.title = title;
   }
 
   async onConnect() {
     const { pageNav } = this;
-    const films = await this.getFilms();
-    this.films = films;
+    const films = await store.find('films');
     pageNav.items = films;
     this.updateViewedFilm();
   }
