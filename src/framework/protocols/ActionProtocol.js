@@ -1,11 +1,13 @@
-export const ACTIONS = Symbol('__actions__');
+import Protocol from './Protocol.js';
 
-const HOST = Symbol('__host__');
+export default class ActionProtocol extends Protocol {
+  constructor(...args) {
+    super(...args);
+    this.actions = {};
+  }
 
-export default class Actions {
-  constructor(host, actions = {}) {
-    this[HOST] = host;
-    this[ACTIONS] = {};
+  onInit() {
+    const { config: actions } = this;
 
     for (const [name, config] of Object.entries(actions)) {
       this.addAction(name, config);
@@ -13,18 +15,17 @@ export default class Actions {
   }
 
   addAction(name, config) {
-    const { [HOST]: host } = this;
-    let callback;
+    const { host, actions } = this;
 
     switch (typeof config) {
       case 'object':
-        if (!(config || Array.isArray(config))) {
-          callback = config.handleEvent;
+        if (config && !Array.isArray(config)) {
+          actions[name] = config.handleEvent;
           host.addEventListener(name, this, config);
           break;
         }
       case 'function':
-        callback = config;
+        actions[name] = config;
         host.addEventListener(name, this, false);
         break;
       default:
@@ -32,24 +33,24 @@ export default class Actions {
           `[Actions] Expected action '${name}' to be called with a function or object`
         );
     }
-
-    this[ACTIONS][name] = callback;
   }
 
   handleEvent(event) {
     const {
-      [HOST]: host,
-      [ACTIONS]: { [event.type]: callback }
+      host,
+      actions: { [event.type]: callback }
     } = this;
 
     callback.call(this, event, host);
   }
 
-  destroy() {
-    const { [HOST]: host, [ACTIONS]: actions } = this;
+  onDisconnect() {
+    const { host, actions } = this;
 
     for (const action of Object.keys(actions)) {
       host.removeEventListener(action, this);
     }
   }
 }
+
+export const Actions = ActionProtocol.SIGNATURE;

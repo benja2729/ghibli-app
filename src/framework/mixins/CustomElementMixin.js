@@ -1,16 +1,48 @@
-import Actions, { ACTIONS } from '../helpers/Actions.js';
-import Mutations, { MUTATIONS } from '../helpers/Mutations.js';
+import { ProtocolMap } from '../protocols/Protocol.js';
+import { Actions } from '../protocols/ActionProtocol.js';
+import { Attributes } from '../protocols/AttributeProtocol.js';
 import { dispatchAction, attachBoundAttributes } from '../helpers/utils.js';
 
-const STATE = Symbol('__state__');
+const PROTOCOLS = Symbol.for('__protocols__');
+const STATE = Symbol.for('__state__');
 
+/**
+ * Ivokes the lifecycle hooks for all attached protocols
+ * and on the CustomElement itself.
+ *
+ * @param {HTMLElement} host CustomElement host
+ * @param {string} hookName Lifecycle hook name
+ */
+function invokeLifecycleHook(host, hookName) {
+  const { [PROTOCOLS]: map, [hookName]: hook } = host;
+  map.invoke(hookName);
+
+  if (typeof hook === 'function') {
+    hook.call(host);
+  }
+}
+
+/**
+ * @type {Map<typeof HTMLElement, typeof CustomElement>}
+ */
 const REGISTRY = new Map();
 
+/**
+ * Provides the base functionality extensions for Web Components.
+ *
+ * @param {typeof HTMLElement} HTMLClass HTMLElement or subclass
+ * @param {string} extendsElement Name of the tag being extended if HTMLClass is not HTMLElement
+ * @return {typeof CustomElement}
+ */
 export default function CustomElementMixin(HTMLClass, extendsElement) {
   if (REGISTRY.has(HTMLClass)) {
     return REGISTRY.get(HTMLClass);
   }
 
+  /**
+   * Provides the base functionality extensions for Web Components.
+   * @extends {typeof HTMLElement}
+   */
   class CustomElement extends HTMLClass {
     static registerAs(name, options = {}) {
       if (typeof extendsElement !== 'string' && HTMLClass !== HTMLElement) {
@@ -32,16 +64,13 @@ export default function CustomElementMixin(HTMLClass, extendsElement) {
       super();
 
       const {
+        protocols = [],
         actions = {},
-        mutations,
         template,
         shadowMode = 'open',
         defaultState = {},
         boundAttributes
       } = this.constructor;
-
-      // Observe mutations
-      this[MUTATIONS] = new Mutations(this, mutations);
 
       // Attach shadow root
       if (typeof template === 'function') {
@@ -66,17 +95,22 @@ export default function CustomElementMixin(HTMLClass, extendsElement) {
         });
       }
 
-      // setup actions
-      this[ACTIONS] = new Actions(this, actions);
-
       // setup state
       this[STATE] = { ...defaultState };
 
       // bind properties and attributes
       attachBoundAttributes(this, boundAttributes);
 
+      // Setup protocols
+      const INSTANCE_PROTOCOLS = [
+        Actions(actions),
+        Attributes({}),
+        ...protocols
+      ];
+      this[PROTOCOLS] = ProtocolMap.create(this, INSTANCE_PROTOCOLS);
+
       // instance-specific implementation
-      this.onInit();
+      invokeLifecycleHook(this, 'onInit');
     }
 
     /**
@@ -87,7 +121,7 @@ export default function CustomElementMixin(HTMLClass, extendsElement) {
     connectedCallback() {
       if (this.isConnected) {
         // instance-specific implementation
-        this.onConnect();
+        invokeLifecycleHook(this, 'onConnect');
       }
     }
 
@@ -95,11 +129,8 @@ export default function CustomElementMixin(HTMLClass, extendsElement) {
 
     disconnectedCallback() {
       if (!this.isConnected) {
-        this[ACTIONS].destroy();
-        this[MUTATIONS].destroy();
-
         // instance-specific implementation
-        this.onDisconnect();
+        invokeLifecycleHook(this, 'onDisconnect');
       }
     }
 
@@ -129,7 +160,7 @@ export default function CustomElementMixin(HTMLClass, extendsElement) {
     }
 
     addActionListener(actionName, config) {
-      this[ACTIONS].addAction(actionName, config);
+      this[PROTOCOLS].get(ACTIONS).addAction(actionName, config);
     }
 
     dispatchAction(name, detail, options) {
