@@ -1,4 +1,7 @@
 import CustomElement from '../framework/CustomElement.js';
+import { transform } from '../framework/helpers/transforms.js';
+
+const filmTransform = transform('film');
 
 export default class GhibliFilmDetails extends CustomElement {
   static get observedAttributes() {
@@ -30,6 +33,12 @@ export default class GhibliFilmDetails extends CustomElement {
 
   set film(film) {
     this.setState('film', film);
+  }
+
+  filmChanged(filmId) {
+    this.film = filmTransform.extract(filmId);
+    this.clearSection();
+    this.render();
   }
 
   clearSection() {
