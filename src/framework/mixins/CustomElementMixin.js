@@ -1,10 +1,26 @@
 import { ProtocolMap } from '../protocols/Protocol.js';
-import { Actions } from '../protocols/ActionProtocol.js';
+import ActionProtocol, { Actions } from '../protocols/ActionProtocol.js';
 import { Attributes } from '../protocols/AttributeProtocol.js';
 import { dispatchAction, attachBoundAttributes } from '../helpers/utils.js';
 
 const PROTOCOLS = Symbol.for('__protocols__');
 const STATE = Symbol.for('__state__');
+
+/**
+ * Create a new ProtocolMap and add the ProtocolDefinitions in scope of the host
+ * @param {HTMLElement} host The host element passed to the Protocol constructor
+ * @param  {ProtocolDefinition[]} protocolDefinitions An array of ProtocolDefinitions
+ */
+function attachProtocolMap(host, protocolDefinitions) {
+  const map = new ProtocolMap();
+
+  for (const { protocol: ProtocolClass, config } of protocolDefinitions) {
+    const protocol = new ProtocolClass(host, config);
+    map.addProtocol(protocol);
+  }
+
+  host[PROTOCOLS] = map;
+}
 
 /**
  * Ivokes the lifecycle hooks for all attached protocols
@@ -37,6 +53,29 @@ const REGISTRY = new Map();
 export default function CustomElementMixin(HTMLClass, extendsElement) {
   if (REGISTRY.has(HTMLClass)) {
     return REGISTRY.get(HTMLClass);
+  }
+
+  /**
+   * Ensures that someone using this mixin cannot override the custom lifecycle workflow.
+   * @param {CustomElement} host CustomElement instance
+   */
+  function protectLifecycleHooks(host) {
+    const { prototype: proto } = CustomElement;
+    const hooks = {
+      connectedCallback: 'onConnect',
+      adoptedCallback: 'onAdopt',
+      disconnectedCallback: 'onDisconnect'
+    };
+
+    for (const name of Object.keys(hooks)) {
+      const { [name]: hook } = host;
+      const { [name]: protoHook} = proto;
+
+      if (hook !== protoHook) {
+        const {[name]: hookName} = hooks;
+        throw new Error(`[CustomElement] Cannot assign '${name}' to '${host.localName}', use '${hookName}' instead.`)
+      }
+    }
   }
 
   /**
@@ -103,39 +142,30 @@ export default function CustomElementMixin(HTMLClass, extendsElement) {
       attachBoundAttributes(this, boundAttributes);
 
       // Setup protocols
-      const INSTANCE_PROTOCOLS = [
+      attachProtocolMap(this, [
         Actions(actions),
         Attributes(attributes),
         ...protocols
-      ];
-      this[PROTOCOLS] = ProtocolMap.create(this, INSTANCE_PROTOCOLS);
-
-      // instance-specific implementation
+      ]);
+      protectLifecycleHooks(this);
       invokeLifecycleHook(this, 'onInit');
     }
 
-    /**
-     * Lifecycle hooks
-     */
-    onInit() {}
-
     connectedCallback() {
       if (this.isConnected) {
-        // instance-specific implementation
         invokeLifecycleHook(this, 'onConnect');
       }
     }
 
-    onConnect() {}
+    adoptedCallback() {
+      invokeLifecycleHook(this, 'onAdopted')
+    }
 
     disconnectedCallback() {
       if (!this.isConnected) {
-        // instance-specific implementation
         invokeLifecycleHook(this, 'onDisconnect');
       }
     }
-
-    onDisconnect() {}
 
     /**
      * Instance methods
@@ -161,7 +191,7 @@ export default function CustomElementMixin(HTMLClass, extendsElement) {
     }
 
     addActionListener(actionName, config) {
-      this[PROTOCOLS].get(ACTIONS).addAction(actionName, config);
+      this[PROTOCOLS].get(ActionProtocol).addAction(actionName, config);
     }
 
     dispatchAction(name, detail, options) {

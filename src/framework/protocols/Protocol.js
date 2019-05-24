@@ -12,6 +12,8 @@
 
 export default class Protocol {
   /**
+   * Returns a function that returns the protocol signature to be passed to ProtocolMap.
+   * NOTE: Is set as a property to retain scope of `this`
    * @property {ProtocolSignature}
    */
   static get SIGNATURE() {
@@ -30,52 +32,39 @@ export default class Protocol {
         configurable: false,
         writable: false,
         enumerable: true,
-        value: { ...config }
+        value: Object.freeze({ ...config })
       }
     });
   }
-  onInit() {}
-  onConnect() {}
-  onDisconnect() {}
 }
 
 export class ProtocolMap extends Map {
   /**
-   * Create a new ProtocolMap and add the ProtocolDefinitions in scope of the host
-   * @param {HTMLElement} host The host element passed to the Protocol constructor
-   * @param  {ProtocolDefinition[]} protocolDefinitions An array of ProtocolDefinitions
-   * @returns {ProtocolMap}
+   * Restring default Map#set to unique instances of Protocol types
+   * @param {typeof Protocol} ProtocolClass 
+   * @param {Protocol} protocol 
+   * @returns {this}
    */
-  static create(host, protocolDefinitions) {
-    const map = new this();
-
-    for (const { protocol: ProtocolClass, config } of protocolDefinitions) {
-      const protocol = new ProtocolClass(host, config);
-      map.addProtocol(protocol);
-    }
-
-    return map;
-  }
-
   set(ProtocolClass, protocol) {
     if (protocol instanceof ProtocolClass && !this.has(ProtocolClass)) {
       super.set(ProtocolClass, protocol);
     }
+    return this;
   }
 
   /**
    * Add a unique Protocol object to the map
-   *
    * @param {Protocol} protocol
+   * @returns {boolean}
    */
   addProtocol(protocol) {
     const { constructor } = protocol;
     this.set(constructor, protocol);
+    return this.has(constructor);
   }
 
   /**
    * Iterates through all Protocols and calls the passed lifecycle hook on each.
-   *
    * @param {string} hookName The name of the CustomElement lifecycle hook
    * @param {...any} params Parameters to pass to the lifecycle hook
    */

@@ -23,7 +23,6 @@ export function prop2attr(prop) {
     return `${delim(index)}${rec(char.toLowerCase())}`;
   });
 }
-window.prop2attr = prop2attr;
 
 export function attachBoundAttributes(host, attrs = []) {
   const { prototype: proto } = host.constructor;
