@@ -66,6 +66,7 @@ export default function CustomElementMixin(HTMLClass, extendsElement) {
       const {
         protocols = [],
         actions = {},
+        attributes = {},
         template,
         shadowMode = 'open',
         defaultState = {},
@@ -104,7 +105,7 @@ export default function CustomElementMixin(HTMLClass, extendsElement) {
       // Setup protocols
       const INSTANCE_PROTOCOLS = [
         Actions(actions),
-        Attributes({}),
+        Attributes(attributes),
         ...protocols
       ];
       this[PROTOCOLS] = ProtocolMap.create(this, INSTANCE_PROTOCOLS);

@@ -10,10 +10,20 @@ export function dispatchAction(host, name, detail, options = {}) {
 }
 
 export function attr2prop(attr) {
-  return attr.replace(/-(\w)/g, (_, char) => {
+  return attr.toLowerCase().replace(/-(\w)/g, (_, char) => {
     return char.toUpperCase();
   });
 }
+
+export function prop2attr(prop) {
+  const delim = i => (i > 0 ? '-' : '');
+  const rec = term =>
+    term.length > 1 ? `${term.slice(0, -1)}-${term.slice(-1)}` : term;
+  return prop.replace(/([A-Z]+)/g, (_, char, index) => {
+    return `${delim(index)}${rec(char.toLowerCase())}`;
+  });
+}
+window.prop2attr = prop2attr;
 
 export function attachBoundAttributes(host, attrs = []) {
   const { prototype: proto } = host.constructor;

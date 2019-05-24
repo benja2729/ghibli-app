@@ -5,12 +5,18 @@ export default class GhibliFilmDetails extends CustomElement {
     return ['film'];
   }
 
-  onConnect() {
-    this.render();
+  static get attributes() {
+    return {
+      film: {
+        onChange(host) {
+          host.clearSection();
+          host.render();
+        }
+      }
+    };
   }
 
-  filmChanged(filmId) {
-    this.clearSection();
+  onConnect() {
     this.render();
   }
 
@@ -48,4 +54,3 @@ export default class GhibliFilmDetails extends CustomElement {
 GhibliFilmDetails.registerAs('ghibli-film-details', {
   extends: 'section'
 });
-
