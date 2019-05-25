@@ -9,9 +9,9 @@ function attr2prop(attr) {
     return ATTR_CACHE[attr];
   }
 
-  return ATTR_CACHE[attr] = attr.toLowerCase().replace(/-(\w)/g, (_, char) => {
+  return (ATTR_CACHE[attr] = attr.toLowerCase().replace(/-(\w)/g, (_, char) => {
     return char.toUpperCase();
-  });
+  }));
 }
 
 function prop2attr(prop) {
@@ -23,9 +23,9 @@ function prop2attr(prop) {
   const rec = term =>
     term.length > 1 ? `${term.slice(0, -1)}-${term.slice(-1)}` : term;
 
-  return PROP_CACHE[prop] = prop.replace(/([A-Z]+)/g, (_, char, index) => {
+  return (PROP_CACHE[prop] = prop.replace(/([A-Z]+)/g, (_, char, index) => {
     return `${delim(index)}${rec(char.toLowerCase())}`;
-  });
+  }));
 }
 
 export default class AttributeProtocol extends Protocol {
@@ -45,13 +45,18 @@ export default class AttributeProtocol extends Protocol {
         const newValue = host.getAttribute(attributeName);
         const prop = attr2prop(attributeName);
         const {
+          [prop]: impliedChange,
           [prop]: { onChange, transform }
         } = config;
+
+        if (typeof impliedChange === 'function') {
+          impliedChange(host, newValue, oldValue);
+          continue;
+        }
 
         if (transform && typeof transform.extract === 'function') {
           host.setState(prop, transform.extract(newValue));
         }
-
         if (typeof onChange === 'function') {
           onChange(host, newValue, oldValue);
         }
@@ -86,10 +91,12 @@ export default class AttributeProtocol extends Protocol {
           enumerable: false,
           configurable: true,
           get: get || (() => host.getState(prop)),
-          set: set || (transform && typeof transform.serialize === 'function' ?
-            value => host.setAttribute(attr, transform.serialize(value)) :
-            value => host.setAttribute(attr, value) && host.setState(attr, value)
-          )
+          set:
+            set ||
+            (transform && typeof transform.serialize === 'function'
+              ? value => host.setAttribute(attr, transform.serialize(value))
+              : value =>
+                  host.setAttribute(attr, value) && host.setState(attr, value))
         });
       }
     }

@@ -10,19 +10,13 @@ const NAV_ITEM_SELECTOR = 'page-nav--item';
 const NAV_ITEM = document.createElement('li');
 NAV_ITEM.classList.add(NAV_ITEM_SELECTOR);
 
-function click(event, host) {
+function click(event) {
   event.stopPropagation();
-  const { target } = event;
-  const pageItem = target.closest('[page]');
+  const { target, currentTarget: host } = event;
+  const navItem = target.closest(`.${NAV_ITEM_SELECTOR}`);
 
-  if (pageItem) {
-    host.setAttribute('current-page', pageItem.getAttribute('page'));
-  } else {
-    const navItem = target.closest(`.${NAV_ITEM_SELECTOR}`);
-
-    if (navItem) {
-      host.selectedItem = navItem;
-    }
+  if (navItem) {
+    host.selectedItem = navItem;
   }
 }
 
@@ -33,30 +27,49 @@ export default class PageNav extends CustomElement {
     };
   }
 
+  static get attributes() {
+    return {
+      // Template must set the `[page]` attribute for this to work
+      currentPage(host, page) {
+        const { navList, currentPage } = host;
+
+        if (!navList || currentPage === page) {
+          return;
+        }
+        const pageItem = navList.querySelector(`[page="${page}"]`);
+
+        if (pageItem) {
+          host.selectedItem = pageItem.closest(`.${NAV_ITEM_SELECTOR}`);
+        } else {
+          console.warn(
+            '[PageNav] template must set `[page]` attribute to update selected via `[current-page]`'
+          );
+        }
+      }
+    };
+  }
+
   constructor() {
     super();
-    this[Symbol.for('__protocols__')].get(ActionProtocol).addAction('click', click);
+    this[Symbol.for('__protocols__')]
+      .get(ActionProtocol)
+      .addAction('click', click);
   }
 
   onConnect() {
     this.renderNavList();
   }
 
-  // Template must set the `[page]` attribute for this to work
-  currentPageChanged(page) {
-    const { navList } = this;
+  onDisconnect() {
+    this.removeEventListener('click', click, false);
+  }
 
-    if (!navList) {
-      return;
-    }
-    const pageItem = navList.querySelector(`[page="${page}"]`);
+  get currentPage() {
+    const { selectedItem } = this;
 
-    if (pageItem) {
-      this.selectedItem = pageItem.closest(`.${NAV_ITEM_SELECTOR}`);
-    } else {
-      console.warn(
-        '[PageNav] template must set `[page]` attribute to update selected via `[current-page]`'
-      );
+    if (selectedItem) {
+      const pageItem = selectedItem.querySelector('[page]');
+      return pageItem && pageItem.getAttribute('page');
     }
   }
 
@@ -76,6 +89,7 @@ export default class PageNav extends CustomElement {
     }
 
     selected.setAttribute('selected', '');
+    this.currentPage = this.currentPage || false;
   }
 
   get items() {

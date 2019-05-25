@@ -1,4 +1,5 @@
-html {
+html,
+:root {
   --spacing-xsm: 0.25rem;
   --spacing-sm: 0.5rem;
   --spacing-md: 1rem;
@@ -6,8 +7,8 @@ html {
   --spacing-xl: 3rem;
   --spacing-xxl: 6rem;
   --color-primary: #009688;
-  --color-neutral--light: #EEE;
-  --color-neutral: #D3D3D3;
+  --color-neutral--light: #eee;
+  --color-neutral: #d3d3d3;
   --color-text-neutral: #808080;
 }
 
@@ -58,7 +59,7 @@ ghibli-app {
   color: unset;
 }
 
-[is="ghibli-film-details"] {
+[is='ghibli-film-details'] {
   padding-inline-start: var(--spacing-lg);
   padding-inline-end: var(--spacing-lg);
 }
@@ -98,7 +99,6 @@ ghibli-app {
 
 .film-details--meta > .meta-term,
 .film-details--meta > .meta-def {
-
 }
 
 .film-details--meta > .meta-term {
@@ -114,4 +114,3 @@ ghibli-app {
   flex-basis: 66%;
   margin: 0;
 }
-
