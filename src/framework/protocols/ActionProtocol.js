@@ -1,13 +1,23 @@
 import Protocol from './Protocol.js';
 
-export default class ActionProtocol extends Protocol {
-  constructor(...args) {
-    super(...args);
-    this.actions = {};
-  }
+export function dispatchAction(host, name, detail, options = {}) {
+  const action = new CustomEvent(name, {
+    bubbles: true,
+    composed: true,
+    cancelable: true,
+    ...options,
+    detail
+  });
+  host.dispatchEvent(action);
+}
 
+export default class ActionProtocol extends Protocol {
   onInit() {
-    const { config: actions } = this;
+    this.actions = {};
+    const { host, config: actions } = this;
+
+    // Define `dispatchAction` on host
+    host.dispatchAction = dispatchAction.bind(null, host);
 
     for (const [name, config] of Object.entries(actions)) {
       this.addAction(name, config);

@@ -1,16 +1,12 @@
 import CustomElement from '../framework/CustomElement.js';
 import { transform } from '../framework/helpers/transforms.js';
 
-const filmTransform = transform('film');
-
 export default class GhibliFilmDetails extends CustomElement {
-  static get observedAttributes() {
-    return ['film'];
-  }
-
   static get attributes() {
     return {
       film: {
+        bind: true,
+        transform: transform('film'),
         onChange(host) {
           host.clearSection();
           host.render();
@@ -25,20 +21,6 @@ export default class GhibliFilmDetails extends CustomElement {
 
   get template() {
     return this.querySelector('template');
-  }
-
-  get film() {
-    return this.getState('film');
-  }
-
-  set film(film) {
-    this.setState('film', film);
-  }
-
-  filmChanged(filmId) {
-    this.film = filmTransform.extract(filmId);
-    this.clearSection();
-    this.render();
   }
 
   clearSection() {

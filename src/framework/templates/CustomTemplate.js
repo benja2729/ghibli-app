@@ -1,4 +1,4 @@
-import { dispatchAction } from '../helpers/utils.js';
+import { dispatchAction } from '../protocols/ActionProtocol.js';
 
 const DELEGATED_STRATEGIES = {
   attr(segment, value, context) {

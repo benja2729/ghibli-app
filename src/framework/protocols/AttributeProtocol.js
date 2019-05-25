@@ -1,18 +1,31 @@
 import Protocol from './Protocol.js';
-import { attr2prop, prop2attr } from '../helpers/utils.js';
 
 const OBSERVER = Symbol('__observer__');
+const ATTR_CACHE = {};
+const PROP_CACHE = {};
 
-function legacyUpdate({ attributeName, target: host, oldValue }) {
-  const newValue = host.getAttribute(attributeName);
-
-  if (oldValue !== newValue) {
-    const changeFn = host[`${attr2prop(attributeName)}Changed`];
-
-    if (typeof changeFn === 'function') {
-      changeFn.call(host, newValue, oldValue);
-    }
+function attr2prop(attr) {
+  if (ATTR_CACHE[attr]) {
+    return ATTR_CACHE[attr];
   }
+
+  return ATTR_CACHE[attr] = attr.toLowerCase().replace(/-(\w)/g, (_, char) => {
+    return char.toUpperCase();
+  });
+}
+
+function prop2attr(prop) {
+  if (PROP_CACHE[prop]) {
+    return PROP_CACHE[prop];
+  }
+
+  const delim = i => (i > 0 ? '-' : '');
+  const rec = term =>
+    term.length > 1 ? `${term.slice(0, -1)}-${term.slice(-1)}` : term;
+
+  return PROP_CACHE[prop] = prop.replace(/([A-Z]+)/g, (_, char, index) => {
+    return `${delim(index)}${rec(char.toLowerCase())}`;
+  });
 }
 
 export default class AttributeProtocol extends Protocol {
@@ -21,8 +34,7 @@ export default class AttributeProtocol extends Protocol {
       return this[OBSERVER];
     }
 
-    const { isLegacy, config } = this;
-
+    const { config } = this;
     const value = new MutationObserver(mutationList => {
       for (const mutation of mutationList) {
         const { type, attributeName, target: host, oldValue } = mutation;
@@ -30,20 +42,14 @@ export default class AttributeProtocol extends Protocol {
           continue;
         }
 
-        if (isLegacy) {
-          legacyUpdate(mutation);
-          continue;
-        }
-
         const newValue = host.getAttribute(attributeName);
         const prop = attr2prop(attributeName);
         const {
-          [prop]: { onChange, extract }
+          [prop]: { onChange, transform }
         } = config;
 
-        if (typeof extract === 'function') {
-          // TODO: have this set on state instead of on property
-          host[prop] = extract(host, newValue, oldValue);
+        if (transform && typeof transform.extract === 'function') {
+          host.setState(prop, transform.extract(newValue));
         }
 
         if (typeof onChange === 'function') {
@@ -62,30 +68,46 @@ export default class AttributeProtocol extends Protocol {
     return value;
   }
 
-  get isLegacy() {
-    return Object.keys(this.config).length === 0;
-  }
-
-  get attributeFilter() {
-    const {
-      isLegacy,
-      config,
-      host: {
-        constructor: { observedAttributes: legacyAttributeFilter }
-      }
-    } = this;
-    return isLegacy
-      ? legacyAttributeFilter
-      : Object.keys(config).map(prop => prop2attr(prop));
-  }
-
   onInit() {
-    const { host, attributeFilter, observer } = this;
+    const { host, config, observer } = this;
     observer.observe(host, {
-      attributeFilter,
+      attributeFilter: Object.keys(config).map(prop => prop2attr(prop)),
       attributes: true,
       attributeOldValue: true
     });
+
+    for (const [prop, conf] of Object.entries(config)) {
+      const { bind, transform } = conf;
+
+      if (bind) {
+        const { get, set } = bind;
+        const attr = prop2attr(prop);
+        Object.defineProperty(host, prop, {
+          enumerable: false,
+          configurable: true,
+          get: get || (() => host.getState(prop)),
+          set: set || (transform && typeof transform.serialize === 'function' ?
+            value => host.setAttribute(attr, transform.serialize(value)) :
+            value => host.setAttribute(attr, value) && host.setState(attr, value)
+          )
+        });
+      }
+    }
+  }
+
+  onConnect() {
+    const { host, config } = this;
+    for (const [prop, conf] of Object.entries(config)) {
+      const attr = prop2attr(prop);
+
+      if (conf.hasOwnProperty('default') && !host.hasAttribute(attr)) {
+        if (conf.bind) {
+          host[prop] = conf.default;
+        } else {
+          host.setAttribute(attr, conf.default);
+        }
+      }
+    }
   }
 
   onDisconnect() {

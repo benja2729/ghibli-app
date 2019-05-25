@@ -78,3 +78,21 @@ export class ProtocolMap extends Map {
     }
   }
 }
+
+export const PROTOCOLS = Symbol.for('__protocols__');
+
+/**
+ * Create a new ProtocolMap and add the ProtocolDefinitions in scope of the host
+ * @param {HTMLElement} host The host element passed to the Protocol constructor
+ * @param  {ProtocolDefinition[]} [protocolDefinitions] An array of ProtocolDefinitions
+ */
+export function attachProtocolMap(host, protocolDefinitions=[]) {
+  const map = new ProtocolMap();
+
+  for (const { protocol: ProtocolClass, config } of protocolDefinitions) {
+    const protocol = new ProtocolClass(host, config);
+    map.addProtocol(protocol);
+  }
+
+  host[PROTOCOLS] = map;
+}
