@@ -1,6 +1,7 @@
 import { attachProtocolMap, PROTOCOLS } from '../protocols/Protocol.js';
 import { Actions } from '../protocols/ActionProtocol.js';
 import { Attributes } from '../protocols/AttributeProtocol.js';
+import { Shadow } from '../protocols/ShadowProtocol.js';
 
 const STATE = Symbol.for('__state__');
 
@@ -21,11 +22,15 @@ function protectPrototype(host, customElement) {
 
   for (const name of Object.keys(hooks)) {
     const { [name]: hook } = host;
-    const { [name]: protoHook} = proto;
+    const { [name]: protoHook } = proto;
 
     if (hook !== protoHook) {
-      const {[name]: hookName} = hooks;
-      throw new Error(`[CustomElement] Cannot assign '${name}' to '${host.localName}', use '${hookName}' instead.`)
+      const { [name]: hookName } = hooks;
+      throw new Error(
+        `[CustomElement] Cannot assign '${name}' to '${
+          host.localName
+        }', use '${hookName}' instead.`
+      );
     }
   }
 }
@@ -39,12 +44,21 @@ const REGISTRY = new Map();
  * Provides the base functionality extensions for Web Components.
  *
  * @param {typeof HTMLElement} HTMLClass HTMLElement or subclass
- * @param {string} extendsElement Name of the tag being extended if HTMLClass is not HTMLElement
+ * @param {string} nativTagExtension Name of the tag being extended if HTMLClass is not HTMLElement
  * @return {typeof CustomElement}
  */
-export default function CustomElementMixin(HTMLClass, extendsElement) {
+export default function CustomElementMixin(HTMLClass, nativTagExtension) {
   if (REGISTRY.has(HTMLClass)) {
     return REGISTRY.get(HTMLClass);
+  }
+
+  const extendsNativeTag =
+    HTMLClass !== HTMLElement && HTMLClass.prototype instanceof HTMLElement;
+
+  if (extendsNativeTag && typeof nativTagExtension !== 'string') {
+    throw new Error(
+      `Must provide 'extendsElement' to CustomElementMixin for ${HTMLClass}`
+    );
   }
 
   /**
@@ -53,12 +67,8 @@ export default function CustomElementMixin(HTMLClass, extendsElement) {
    */
   class CustomElement extends HTMLClass {
     static registerAs(name, options = {}) {
-      if (typeof extendsElement !== 'string' && HTMLClass !== HTMLElement) {
-        throw new Error(
-          `Must provide 'extendsElement' to CustomElementMixin for ${HTMLClass}`
-        );
-      } else if (!options.extends) {
-        options.extends = extendsElement;
+      if (extendsNativeTag && !options.extends) {
+        options.extends = nativTagExtension;
       }
 
       window.customElements.define(name, this, options);
@@ -72,47 +82,24 @@ export default function CustomElementMixin(HTMLClass, extendsElement) {
         protocols = [],
         actions = {},
         attributes = {},
-        template,
-        shadowMode = 'open',
-        defaultState = {},
+        defaultState = {}
       } = this.constructor;
 
-      // Attach shadow root
-      if (typeof template === 'function') {
-        const shadow = template(this, document);
-        const root = this.attachShadow({ mode: shadowMode });
+      const INSTANCE_PROTOCOLS = [Actions(actions), Attributes(attributes)];
 
-        if (shadow instanceof HTMLTemplateElement) {
-          root.append(shadow.content.cloneNode(true));
-        } else if (typeof shadow === 'string') {
-          root.innerHTML = shadow;
-        }
-
-        this.$ = {};
-        const elms = root.querySelectorAll('[id]');
-        elms.forEach(({ id }) => {
-          Object.defineProperty(this.$, id, {
-            enumerable: true,
-            get() {
-              return root.getElementById(id);
-            }
-          });
-        });
+      if (!extendsNativeTag) {
+        INSTANCE_PROTOCOLS.push(Shadow());
       }
 
       // setup state
       this[STATE] = { ...defaultState };
 
       // Setup protocols
-      attachProtocolMap(this, [
-        Actions(actions),
-        Attributes(attributes),
-        ...protocols
-      ]);
+      attachProtocolMap(this, [...INSTANCE_PROTOCOLS, ...protocols]);
       this.invokeLifecycleHook('onInit');
     }
 
-  /**
+    /**
      * Ivokes the lifecycle hooks for all attached protocols
      * and on the CustomElement itself.
      *
@@ -135,7 +122,7 @@ export default function CustomElementMixin(HTMLClass, extendsElement) {
     }
 
     adoptedCallback() {
-      this.invokeLifecycleHook('onAdopted')
+      this.invokeLifecycleHook('onAdopted');
     }
 
     disconnectedCallback() {

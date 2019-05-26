@@ -1,8 +1,72 @@
 import { dispatchAction } from '../protocols/ActionProtocol.js';
 
+const CUSTOM_TEMPLATE_ROOT = window.CUSTOM_TEMPLATE_ROOT || 'templates';
+const CUSTOM_TEMPLATE_REGEXP = /^([\w-]+)--template$/;
+const MANAGED_PROMISES = {
+  promises: {},
+  fetch(source) {
+    const {
+      promises,
+      promises: { [source]: pendingPromise }
+    } = this;
+
+    if (pendingPromise) {
+      return pendingPromise;
+    }
+
+    const promise = fetch(source).then(response => {
+      delete promises[source];
+      return response.text();
+    });
+    promises[source] = promise;
+    return promise;
+  }
+};
+
+function dispatchContentLoaded(template) {
+  const event = new CustomEvent('CONTENT_LOADED', {
+    composed: false,
+    bubbles: false,
+    detail: template
+  });
+  template.dispatchEvent(event);
+}
+
+function generateSourceUrl(template) {
+  const { id, src } = template;
+
+  if (src) {
+    return src;
+  }
+
+  if (!id) {
+    throw new Error('[CustomTemplate] Must pass an id to load a template');
+  }
+
+  try {
+    const filename = id.match(CUSTOM_TEMPLATE_REGEXP)[1];
+    return `${CUSTOM_TEMPLATE_ROOT}/${filename}.html`;
+  } catch (err) {
+    throw new Error(
+      "[CustomTemplate] id must match '(component-name)--template'"
+    );
+  }
+}
+
+function fetchTemplateContent(template) {
+  const source = generateSourceUrl(template);
+  template.isLoading = true;
+  MANAGED_PROMISES.fetch(source).then(innerHTML => {
+    Object.assign(template, {
+      innerHTML,
+      isLoading: false
+    });
+  });
+}
+
 const DELEGATED_STRATEGIES = {
   attr(segment, value, context) {
-    const [ attr, prop ] = value.split(':');
+    const [attr, prop] = value.split(':');
 
     if (attr && prop) {
       segment.setAttribute(attr, context[prop]);
@@ -14,17 +78,19 @@ const DELEGATED_STRATEGIES = {
   },
 
   action(segment, prop, context) {
-    const [ event, action ] = prop.split(':');
+    const [event, action] = prop.split(':');
 
     if (event && action) {
-      segment[event] = function() {
-        dispatchAction(this, action, context);
-      }
+      segment[event] = () => dispatchAction(segment, action, context);
     }
   }
 };
 
 export default class CustomTemplate extends HTMLTemplateElement {
+  static get observedAttributes() {
+    return ['src', 'async', 'loading'];
+  }
+
   static get delegatedStrategies() {
     return DELEGATED_STRATEGIES;
   }
@@ -35,16 +101,72 @@ export default class CustomTemplate extends HTMLTemplateElement {
     });
   }
 
+  get src() {
+    return this.getAttribute('src');
+  }
+
+  get isAsync() {
+    return this.hasAttribute('async');
+  }
+
+  set isAsync(bool) {
+    if (bool) {
+      this.setAttribute('async', '');
+    } else {
+      this.removeAttribute('async');
+    }
+  }
+
+  get isLoading() {
+    return this.hasAttribute('loading');
+  }
+
+  set isLoading(bool) {
+    if (bool) {
+      this.setAttribute('loading', '');
+    } else {
+      this.removeAttribute('loading');
+    }
+  }
+
+  get isShadow() {
+    return this.hasAttribute('is-shadow');
+  }
+
   get hook() {
     return this.getAttribute('hook') || 'data-strategy';
   }
 
-  set hook(hook) {
-    this.setAttribute('hook', hook);
-  }
-
   get root() {
     return this.content.cloneNode(true);
+  }
+
+  connectedCallback() {
+    if (this.isConnected) {
+      const {
+        constructor: { templateSource }
+      } = this;
+
+      if (templateSource) {
+        this.src = templateSource;
+      }
+    }
+  }
+
+  attributeChangedCallback(attr, oldValue, value) {
+    const isAsync = typeof value === 'string';
+
+    if (attr === 'src') {
+      this.isAsync = isAsync;
+    }
+
+    if (attr === 'async' && isAsync) {
+      fetchTemplateContent(this);
+    }
+
+    if (attr === 'loading' && oldValue === '' && value === null) {
+      dispatchContentLoaded(this);
+    }
   }
 
   render(context) {
@@ -88,9 +210,7 @@ export default class CustomTemplate extends HTMLTemplateElement {
 
   applyStrategy(strategy, segment, context) {
     const params = [segment, context, this.parentElement];
-    const {
-      [`${strategy}Strategy`]: strategyFn
-    } = this;
+    const { [`${strategy}Strategy`]: strategyFn } = this;
 
     if (typeof strategyFn === 'function') {
       strategyFn.call(this, ...params);
@@ -102,7 +222,9 @@ export default class CustomTemplate extends HTMLTemplateElement {
   unknownStrategy(segment) {
     const attr = segment.getAttribute(this.hook);
     throw new Error(
-      `[CustomTemplate] unknown strategy for '${segment.tagName}' with '${attr}'`
+      `[CustomTemplate] unknown strategy for '${
+        segment.tagName
+      }' with '${attr}'`
     );
   }
 }
@@ -110,4 +232,3 @@ export default class CustomTemplate extends HTMLTemplateElement {
 customElements.define('custom-template', CustomTemplate, {
   extends: 'template'
 });
-
