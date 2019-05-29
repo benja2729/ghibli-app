@@ -1,32 +1,23 @@
 import Protocol from './Protocol.js';
+import Cache from '../helpers/Cache.js';
 
 const OBSERVER = Symbol('__observer__');
-const ATTR_CACHE = {};
-const PROP_CACHE = {};
 
-function attr2prop(attr) {
-  if (ATTR_CACHE[attr]) {
-    return ATTR_CACHE[attr];
-  }
-
-  return (ATTR_CACHE[attr] = attr.toLowerCase().replace(/-(\w)/g, (_, char) => {
+const ATTR_CACHE = Cache(attr => {
+  return attr.toLowerCase().replace(/-(\w)/g, (_, char) => {
     return char.toUpperCase();
-  }));
-}
+  });
+});
 
-function prop2attr(prop) {
-  if (PROP_CACHE[prop]) {
-    return PROP_CACHE[prop];
-  }
-
+const PROP_CACHE = Cache(prop => {
   const delim = i => (i > 0 ? '-' : '');
   const rec = term =>
     term.length > 1 ? `${term.slice(0, -1)}-${term.slice(-1)}` : term;
 
-  return (PROP_CACHE[prop] = prop.replace(/([A-Z]+)/g, (_, char, index) => {
+  return prop.replace(/([A-Z]+)/g, (_, char, index) => {
     return `${delim(index)}${rec(char.toLowerCase())}`;
-  }));
-}
+  });
+});
 
 export default class AttributeProtocol extends Protocol {
   get observer() {
@@ -43,7 +34,7 @@ export default class AttributeProtocol extends Protocol {
         }
 
         const newValue = host.getAttribute(attributeName);
-        const prop = attr2prop(attributeName);
+        const prop = ATTR_CACHE.get(attributeName);
         const {
           [prop]: impliedChange,
           [prop]: { onChange, transform }
@@ -76,7 +67,7 @@ export default class AttributeProtocol extends Protocol {
   onInit() {
     const { host, config, observer } = this;
     observer.observe(host, {
-      attributeFilter: Object.keys(config).map(prop => prop2attr(prop)),
+      attributeFilter: Object.keys(config).map(prop => PROP_CACHE.get(prop)),
       attributes: true,
       attributeOldValue: true
     });
@@ -86,7 +77,7 @@ export default class AttributeProtocol extends Protocol {
 
       if (bind) {
         const { get, set } = bind;
-        const attr = prop2attr(prop);
+        const attr = PROP_CACHE.get(prop);
         Object.defineProperty(host, prop, {
           enumerable: false,
           configurable: true,
@@ -105,7 +96,7 @@ export default class AttributeProtocol extends Protocol {
   onConnect() {
     const { host, config } = this;
     for (const [prop, conf] of Object.entries(config)) {
-      const attr = prop2attr(prop);
+      const attr = PROP_CACHE.get(prop);
 
       if (conf.hasOwnProperty('default') && !host.hasAttribute(attr)) {
         if (conf.bind) {

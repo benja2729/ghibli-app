@@ -2,7 +2,7 @@ export default function Cache(getUnset) {
   class CacheMap extends Map {
     get(key) {
       if (this.has(key)) {
-        return this.get(key);
+        return super.get(key);
       }
 
       const value = getUnset(key);
