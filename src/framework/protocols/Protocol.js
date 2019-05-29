@@ -1,23 +1,23 @@
 /**
- * @typedef ProtocolDefinition
- * @property {typeof Protocol} protocol A Protocol class
- * @property {object} config Configuration passed to the Protocol constructor
+ * @typedef PluginDefinition
+ * @property {typeof Plugin} plugin A Plugin class
+ * @property {object} config Configuration passed to the Plugin constructor
  */
 
 /**
- * @callback ProtocolSignature
+ * @callback PluginSignature
  * @param {object} config
- * @returns {ProtocolDefinition}
+ * @returns {PluginDefinition}
  */
 
-export default class Protocol {
+export default class Plugin {
   /**
-   * Returns a function that returns the protocol signature to be passed to ProtocolMap.
+   * Returns a function that returns the plugin signature to be passed to PluginMap.
    * NOTE: Is set as a property to retain scope of `this`
-   * @property {ProtocolSignature}
+   * @property {PluginSignature}
    */
   static get SIGNATURE() {
-    return config => ({ protocol: this, config });
+    return config => ({ plugin: this, config });
   }
 
   constructor(host, config = {}) {
@@ -38,61 +38,61 @@ export default class Protocol {
   }
 }
 
-export class ProtocolMap extends Map {
+export class PluginMap extends Map {
   /**
-   * Restring default Map#set to unique instances of Protocol types
-   * @param {typeof Protocol} ProtocolClass 
-   * @param {Protocol} protocol 
+   * Restring default Map#set to unique instances of Plugin types
+   * @param {typeof Plugin} PluginClass
+   * @param {Plugin} plugin
    * @returns {this}
    */
-  set(ProtocolClass, protocol) {
-    if (protocol instanceof ProtocolClass && !this.has(ProtocolClass)) {
-      super.set(ProtocolClass, protocol);
+  set(PluginClass, plugin) {
+    if (plugin instanceof PluginClass && !this.has(PluginClass)) {
+      super.set(PluginClass, plugin);
     }
     return this;
   }
 
   /**
-   * Add a unique Protocol object to the map
-   * @param {Protocol} protocol
+   * Add a unique Plugin object to the map
+   * @param {Plugin} plugin
    * @returns {boolean}
    */
-  addProtocol(protocol) {
-    const { constructor } = protocol;
-    this.set(constructor, protocol);
+  addPlugin(plugin) {
+    const { constructor } = plugin;
+    this.set(constructor, plugin);
     return this.has(constructor);
   }
 
   /**
-   * Iterates through all Protocols and calls the passed lifecycle hook on each.
+   * Iterates through all Plugins and calls the passed lifecycle hook on each.
    * @param {string} hookName The name of the CustomElement lifecycle hook
    * @param {...any} params Parameters to pass to the lifecycle hook
    */
   invoke(hookName, ...params) {
-    for (const protocol of this.values()) {
-      const { [hookName]: hook } = protocol;
+    for (const plugin of this.values()) {
+      const { [hookName]: hook } = plugin;
 
       if (typeof hook === 'function') {
-        hook.call(protocol, ...params);
+        hook.call(plugin, ...params);
       }
     }
   }
 }
 
-export const PROTOCOLS = Symbol.for('__protocols__');
+export const PLUGINS = Symbol.for('__plugins__');
 
 /**
- * Create a new ProtocolMap and add the ProtocolDefinitions in scope of the host
- * @param {HTMLElement} host The host element passed to the Protocol constructor
- * @param  {ProtocolDefinition[]} [protocolDefinitions] An array of ProtocolDefinitions
+ * Create a new PluginMap and add the PluginDefinitions in scope of the host
+ * @param {HTMLElement} host The host element passed to the Plugin constructor
+ * @param  {PluginDefinition[]} [pluginDefinitions] An array of PluginDefinitions
  */
-export function attachProtocolMap(host, protocolDefinitions=[]) {
-  const map = new ProtocolMap();
+export function attachPluginMap(host, pluginDefinitions = []) {
+  const map = new PluginMap();
 
-  for (const { protocol: ProtocolClass, config } of protocolDefinitions) {
-    const protocol = new ProtocolClass(host, config);
-    map.addProtocol(protocol);
+  for (const { plugin: PluginClass, config } of pluginDefinitions) {
+    const plugin = new PluginClass(host, config);
+    map.addPlugin(plugin);
   }
 
-  host[PROTOCOLS] = map;
+  host[PLUGINS] = map;
 }

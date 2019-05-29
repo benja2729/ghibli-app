@@ -1,4 +1,4 @@
-import Protocol from './Protocol.js';
+import Plugin from './Protocol.js';
 
 export function dispatchAction(host, name, detail, options = {}) {
   const action = new CustomEvent(name, {
@@ -11,7 +11,7 @@ export function dispatchAction(host, name, detail, options = {}) {
   host.dispatchEvent(action);
 }
 
-export default class ActionProtocol extends Protocol {
+export default class ActionPlugin extends Plugin {
   onInit() {
     this.actions = {};
     const { host, config: actions } = this;
@@ -63,4 +63,4 @@ export default class ActionProtocol extends Protocol {
   }
 }
 
-export const Actions = ActionProtocol.SIGNATURE;
+export const Actions = ActionPlugin.SIGNATURE;

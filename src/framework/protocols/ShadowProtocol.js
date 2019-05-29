@@ -1,6 +1,6 @@
-import Protocol from './Protocol.js';
+import Plugin from './Protocol.js';
 
-export default class ShadowProtocol extends Protocol {
+export default class ShadowPlugin extends Plugin {
   onInit() {
     const {
       host,
@@ -71,4 +71,4 @@ export default class ShadowProtocol extends Protocol {
   }
 }
 
-export const Shadow = ShadowProtocol.SIGNATURE;
+export const Shadow = ShadowPlugin.SIGNATURE;

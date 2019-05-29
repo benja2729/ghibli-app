@@ -1,4 +1,4 @@
-import Protocol from './Protocol.js';
+import Plugin from './Protocol.js';
 import Cache from '../helpers/Cache.js';
 
 const OBSERVER = Symbol('__observer__');
@@ -19,7 +19,7 @@ const PROP_CACHE = Cache(prop => {
   });
 });
 
-export default class AttributeProtocol extends Protocol {
+export default class AttributePlugin extends Plugin {
   get observer() {
     if (this[OBSERVER]) {
       return this[OBSERVER];
@@ -114,4 +114,4 @@ export default class AttributeProtocol extends Protocol {
   }
 }
 
-export const Attributes = AttributeProtocol.SIGNATURE;
+export const Attributes = AttributePlugin.SIGNATURE;

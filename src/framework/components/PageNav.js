@@ -1,5 +1,6 @@
 import CustomElement, { importStyles } from '../CustomElement.js';
-import ActionProtocol from '../protocols/ActionProtocol.js';
+import ActionPlugin from '../protocols/ActionProtocol.js';
+import { PLUGINS } from '../protocols/Protocol.js';
 importStyles(import.meta);
 
 const NAV_LIST_SELECTOR = 'page-nav--list';
@@ -51,9 +52,7 @@ export default class PageNav extends CustomElement {
 
   constructor() {
     super();
-    this[Symbol.for('__protocols__')]
-      .get(ActionProtocol)
-      .addAction('click', click);
+    this[PLUGINS].get(ActionPlugin).addAction('click', click);
   }
 
   onConnect() {

@@ -1,4 +1,4 @@
-import { attachProtocolMap, PROTOCOLS } from '../protocols/Protocol.js';
+import { attachPluginMap, PLUGINS } from '../protocols/Protocol.js';
 import { Actions } from '../protocols/ActionProtocol.js';
 import { Attributes } from '../protocols/AttributeProtocol.js';
 import { Shadow } from '../protocols/ShadowProtocol.js';
@@ -17,7 +17,7 @@ function protectPrototype(host, customElement) {
     connectedCallback: 'onConnect',
     adoptedCallback: 'onAdopt',
     disconnectedCallback: 'onDisconnect',
-    invokeLifecycleHook: 'Protocols'
+    invokeLifecycleHook: 'Plugins'
   };
 
   for (const name of Object.keys(hooks)) {
@@ -79,35 +79,35 @@ export default function CustomElementMixin(HTMLClass, nativTagExtension) {
       protectPrototype(this, CustomElement);
 
       const {
-        protocols = [],
+        plugins = [],
         actions = {},
         attributes = {},
         defaultState = {}
       } = this.constructor;
 
-      const INSTANCE_PROTOCOLS = [Actions(actions), Attributes(attributes)];
+      const INSTANCE_PLUGINS = [Actions(actions), Attributes(attributes)];
 
       if (!extendsNativeTag) {
-        INSTANCE_PROTOCOLS.push(Shadow());
+        INSTANCE_PLUGINS.push(Shadow());
       }
 
       // setup state
       this[STATE] = { ...defaultState };
 
-      // Setup protocols
-      attachProtocolMap(this, [...INSTANCE_PROTOCOLS, ...protocols]);
+      // Setup plugins
+      attachPluginMap(this, [...INSTANCE_PLUGINS, ...plugins]);
       this.invokeLifecycleHook('onInit');
     }
 
     /**
-     * Ivokes the lifecycle hooks for all attached protocols
+     * Ivokes the lifecycle hooks for all attached plugins
      * and on the CustomElement itself.
      *
      * @param {string} hookName Lifecycle hook name
      * @param {...any} args Arguments to pass to hooks
      */
     invokeLifecycleHook(hookName, ...args) {
-      const { [PROTOCOLS]: map, [hookName]: hook } = this;
+      const { [PLUGINS]: map, [hookName]: hook } = this;
       map && map.invoke(hookName, ...args);
 
       if (typeof hook === 'function') {
