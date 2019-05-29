@@ -1,6 +1,6 @@
 import CustomElement, { importStyles } from '../CustomElement.js';
-import ActionPlugin from '../protocols/ActionProtocol.js';
-import { PLUGINS } from '../protocols/Protocol.js';
+import ActionPlugin from '../plugins/ActionPlugin.js';
+import { PLUGINS } from '../helpers/Plugin.js';
 importStyles(import.meta);
 
 const NAV_LIST_SELECTOR = 'page-nav--list';

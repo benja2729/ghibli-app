@@ -1,4 +1,4 @@
-import Plugin from './Protocol.js';
+import Plugin from '../helpers/Plugin.js';
 
 export function dispatchAction(host, name, detail, options = {}) {
   const action = new CustomEvent(name, {

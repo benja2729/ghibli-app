@@ -1,4 +1,4 @@
-import Plugin from './Protocol.js';
+import Plugin from '../helpers/Plugin.js';
 
 export default class ShadowPlugin extends Plugin {
   onInit() {

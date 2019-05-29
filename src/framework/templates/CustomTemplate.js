@@ -1,4 +1,4 @@
-import { dispatchAction } from '../protocols/ActionProtocol.js';
+import { dispatchAction } from '../plugins/ActionPlugin.js';
 
 const CUSTOM_TEMPLATE_ROOT = window.CUSTOM_TEMPLATE_ROOT || 'templates';
 const CUSTOM_TEMPLATE_REGEXP = /^([\w-]+)--template$/;

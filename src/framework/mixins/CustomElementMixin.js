@@ -1,7 +1,7 @@
-import { attachPluginMap, PLUGINS } from '../protocols/Protocol.js';
-import { Actions } from '../protocols/ActionProtocol.js';
-import { Attributes } from '../protocols/AttributeProtocol.js';
-import { Shadow } from '../protocols/ShadowProtocol.js';
+import { attachPluginMap, PLUGINS } from '../helpers/Plugin.js';
+import { Actions } from '../plugins/ActionPlugin.js';
+import { Attributes } from '../plugins/AttributePlugin.js';
+import { Shadow } from '../plugins/ShadowPlugin.js';
 
 const STATE = Symbol.for('__state__');
 

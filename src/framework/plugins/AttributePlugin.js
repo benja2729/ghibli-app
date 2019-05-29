@@ -1,4 +1,4 @@
-import Plugin from './Protocol.js';
+import Plugin from '../helpers/Plugin.js';
 import Cache from '../helpers/Cache.js';
 
 const OBSERVER = Symbol('__observer__');
