@@ -1,11 +1,9 @@
 import { attachPluginMap, PLUGINS } from './Plugin.js';
-import Mixin from './Mixin.js';
-import { applyMixins } from '../helpers/Mixin.js';
+import Mixin, { applyMixins } from './Mixin.js';
 import { Actions } from '../plugins/ActionPlugin.js';
 import { Attributes } from '../plugins/AttributePlugin.js';
 import { Shadow } from '../plugins/ShadowPlugin.js';
 
-const POD_REGISTRY = {};
 const STATE = Symbol.for('__state__');
 
 class CoreMixin extends Mixin {
@@ -62,12 +60,12 @@ class CoreMixin extends Mixin {
   }
 }
 
-function setupCustomElement(DefinedElement, options) {
+function setupCustomElement(CustomElement, options) {
   const { plugins = [], mixins = [] } = options;
-  applyMixins(DefinedElement, ...mixins);
+  applyMixins(CustomElement, ...mixins);
   const INSTANCE_PLUGINS = [Shadow()];
 
-  class CustomElement extends DefinedElement {
+  class CoreElement extends CustomElement {
     constructor() {
       super();
 
@@ -89,8 +87,8 @@ function setupCustomElement(DefinedElement, options) {
     }
   }
 
-  CoreMixin.apply(CustomElement);
-  return CustomElement;
+  CoreMixin.applyToClass(CoreElement);
+  return CoreElement;
 }
 
 export default function defineCustomElement(
