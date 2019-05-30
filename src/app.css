@@ -12,6 +12,12 @@ html,
   --color-text-neutral: #808080;
 }
 
+[is='page-nav'] > .page-nav--list {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
 ghibli-app {
   display: flex;
   margin-block-start: var(--spacing-lg);

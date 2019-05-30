@@ -20,6 +20,12 @@ const DESCRIPTOR_CACHE = Cache(MixinClass => {
   return protoDescs;
 });
 
+export function applyMixins(SuperClass, ...Mixins) {
+  for (const MixinClass of Mixins) {
+    MixinClass.apply(SuperClass);
+  }
+}
+
 export default class Mixin {
   static apply(SuperClass) {
     const { prototype: proto } = SuperClass;

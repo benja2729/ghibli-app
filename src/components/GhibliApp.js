@@ -1,4 +1,4 @@
-import CustomElement from '../framework/CustomElement.js';
+import { defineCustomElement } from '../framework/Just.js';
 import store from '../store.js';
 
 import '../framework/components/PageNav.js';
@@ -6,45 +6,34 @@ import './GhibliFilmDetails.js';
 
 const { history, location } = window;
 
-const ACTIONS = {
-  PUSH_HISTORY_STATE({ detail: { id: currentPage, title } }, host) {
-    const state = { currentPage };
-    history.pushState(state, title, `#/page/${currentPage}`);
-  },
-
-  NAV_ITEM_SELECTED({ detail: film }, host) {
-    host.dispatchAction('PUSH_HISTORY_STATE', film);
-    host.currentFilm = film;
-    host.updateViewedFilm();
-  }
-};
-
 function getPageId() {
-  const matches = location.hash.match(/\/page\/(.+)/)
+  const matches = location.hash.match(/\/page\/(.+)/);
   if (matches) {
     return matches[1];
   }
 }
 
-export default class GhibliApp extends CustomElement {
-  static get actions() { return ACTIONS; }
-
+export default class GhibliApp extends HTMLElement {
   constructor() {
     super();
-    window.addEventListener('popstate', (event) => {
-      const { state: { currentPage } } = event;
+    window.addEventListener('popstate', event => {
+      const {
+        state: { currentPage }
+      } = event;
       this.updateViewedFilm();
     });
   }
 
   get pageNav() {
-    return this.getState('pageNav', () => this.querySelector('nav[is="page-nav"]'));
+    return this.getState('pageNav', () =>
+      this.querySelector('nav[is="page-nav"]')
+    );
   }
 
   get filmDetails() {
-    return this.getState('filmDetails', () => this.querySelector(
-      'section[is="ghibli-film-details"]'
-    ));
+    return this.getState('filmDetails', () =>
+      this.querySelector('section[is="ghibli-film-details"]')
+    );
   }
 
   get currentFilm() {
@@ -52,7 +41,7 @@ export default class GhibliApp extends CustomElement {
 
     if (!film) {
       const filmId = getPageId();
-      
+
       if (filmId) {
         film = store.films.find(film => film.id === filmId);
       } else {
@@ -72,7 +61,11 @@ export default class GhibliApp extends CustomElement {
 
   // TODO: Add a Channel class to allow subscriptions for updates like these
   updateViewedFilm() {
-    const { pageNav, filmDetails, currentFilm: { id, title } } = this;
+    const {
+      pageNav,
+      filmDetails,
+      currentFilm: { id, title }
+    } = this;
 
     pageNav.setAttribute('current-page', id);
     filmDetails.setAttribute('film', id);
@@ -87,5 +80,22 @@ export default class GhibliApp extends CustomElement {
   }
 }
 
-GhibliApp.registerAs('ghibli-app');
+GhibliApp.actions = {
+  PUSH_HISTORY_STATE(
+    {
+      detail: { id: currentPage, title }
+    },
+    host
+  ) {
+    const state = { currentPage };
+    history.pushState(state, title, `#/page/${currentPage}`);
+  },
 
+  NAV_ITEM_SELECTED({ detail: film }, host) {
+    host.dispatchAction('PUSH_HISTORY_STATE', film);
+    host.currentFilm = film;
+    host.updateViewedFilm();
+  }
+};
+
+defineCustomElement('ghibli-app', GhibliApp);

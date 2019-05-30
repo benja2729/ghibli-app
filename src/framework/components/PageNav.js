@@ -1,7 +1,6 @@
-import CustomElement, { importStyles } from '../CustomElement.js';
+import { defineCustomElement } from '../Just.js';
 import ActionPlugin from '../plugins/ActionPlugin.js';
 import { PLUGINS } from '../helpers/Plugin.js';
-importStyles(import.meta);
 
 const NAV_LIST_SELECTOR = 'page-nav--list';
 const NAV_LIST = document.createElement('ul');
@@ -21,7 +20,7 @@ function click(event) {
   }
 }
 
-export default class PageNav extends CustomElement {
+export default class PageNav extends HTMLElement {
   static get defaultState() {
     return {
       items: []
@@ -50,8 +49,7 @@ export default class PageNav extends CustomElement {
     };
   }
 
-  constructor() {
-    super();
+  onInit() {
     this[PLUGINS].get(ActionPlugin).addAction('click', click);
   }
 
@@ -123,6 +121,6 @@ export default class PageNav extends CustomElement {
   }
 }
 
-PageNav.registerAs('page-nav', {
+defineCustomElement('page-nav', PageNav, {
   extends: 'nav'
 });
