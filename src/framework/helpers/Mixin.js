@@ -25,13 +25,13 @@ const DESCRIPTOR_CACHE = Cache(MixinClass => {
 });
 
 export default class Mixin {
-	static get descriptors() {
-		return DESCRIPTOR_CACHE.get(this);
-	}
+  static get descriptors() {
+    return DESCRIPTOR_CACHE.get(this);
+  }
 
   static applyToClass(SuperClass) {
     const { prototype: proto } = SuperClass;
-		const { descriptors } = this;
+    const { descriptors } = this;
 
     for (const [key, desc] of Object.entries(descriptors)) {
       if (proto.hasOwnProperty(key)) {
@@ -42,7 +42,7 @@ export default class Mixin {
         Object.defineProperty(proto, key, desc);
       }
     }
-	}
+  }
 
   constructor() {
     throw new Error('[Mixin] You cannot create an instance of a Mixin');

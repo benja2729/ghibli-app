@@ -1,20 +1,7 @@
-import { defineCustomElement } from '../framework/Just.js';
+import registerCustomElement from '../framework/Just.js';
 import { transform } from '../framework/helpers/transforms.js';
 
 export default class GhibliFilmDetails extends HTMLElement {
-  static get attributes() {
-    return {
-      film: {
-        bind: true,
-        transform: transform('film'),
-        onChange(host) {
-          host.clearSection();
-          host.render();
-        }
-      }
-    };
-  }
-
   onConnect() {
     this.render();
   }
@@ -42,6 +29,17 @@ export default class GhibliFilmDetails extends HTMLElement {
   }
 }
 
-defineCustomElement('ghibli-film-details', GhibliFilmDetails, {
+GhibliFilmDetails.attributes = {
+  film: {
+    bind: true,
+    transform: transform('film'),
+    onChange(host) {
+      host.clearSection();
+      host.render();
+    }
+  }
+};
+
+registerCustomElement(import.meta, GhibliFilmDetails, {
   extends: 'section'
 });

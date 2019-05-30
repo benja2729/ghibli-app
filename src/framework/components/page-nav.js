@@ -1,4 +1,4 @@
-import { defineCustomElement } from '../Just.js';
+import registerCustomElement from '../Just.js';
 import ActionPlugin from '../plugins/ActionPlugin.js';
 import { PLUGINS } from '../helpers/Plugin.js';
 
@@ -121,6 +121,6 @@ export default class PageNav extends HTMLElement {
   }
 }
 
-defineCustomElement('page-nav', PageNav, {
+registerCustomElement(import.meta, PageNav, {
   extends: 'nav'
 });

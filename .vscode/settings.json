@@ -1,4 +1,5 @@
 {
   "editor.formatOnSave": true,
-  "editor.insertSpaces": true
+  "editor.insertSpaces": true,
+  "prettier.singleQuote": true
 }

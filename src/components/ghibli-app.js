@@ -1,8 +1,5 @@
-import { defineCustomElement } from '../framework/Just.js';
+import registerCustomElement from '../framework/Just.js';
 import store from '../store.js';
-
-import '../framework/components/PageNav.js';
-import './GhibliFilmDetails.js';
 
 const { history, location } = window;
 
@@ -98,4 +95,4 @@ GhibliApp.actions = {
   }
 };
 
-defineCustomElement('ghibli-app', GhibliApp);
+registerCustomElement(import.meta, GhibliApp);
