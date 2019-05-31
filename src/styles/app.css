@@ -1,16 +1,4 @@
-html,
-:root {
-  --spacing-xsm: 0.25rem;
-  --spacing-sm: 0.5rem;
-  --spacing-md: 1rem;
-  --spacing-lg: 1.5rem;
-  --spacing-xl: 3rem;
-  --spacing-xxl: 6rem;
-  --color-primary: #009688;
-  --color-neutral--light: #eee;
-  --color-neutral: #d3d3d3;
-  --color-text-neutral: #808080;
-}
+@import url('./variables.css');
 
 [is='page-nav'] > .page-nav--list {
   padding: 0;

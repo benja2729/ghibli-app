@@ -1,4 +1,4 @@
-import registerCustomElement from '../framework/Just.js';
+import { defineCustomElement } from '../framework/Just.js';
 import { transform } from '../framework/helpers/transforms.js';
 
 export default class GhibliFilmDetails extends HTMLElement {
@@ -40,6 +40,6 @@ GhibliFilmDetails.attributes = {
   }
 };
 
-registerCustomElement(import.meta, GhibliFilmDetails, {
+defineCustomElement('ghibli-film-details', GhibliFilmDetails, {
   extends: 'section'
 });

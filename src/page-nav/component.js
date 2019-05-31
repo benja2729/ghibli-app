@@ -1,6 +1,5 @@
-import registerCustomElement from '../Just.js';
-import ActionPlugin from '../plugins/ActionPlugin.js';
-import { PLUGINS } from '../helpers/Plugin.js';
+import ActionPlugin from '../framework/plugins/ActionPlugin.js';
+import { PLUGINS } from '../framework/helpers/Plugin.js';
 
 const NAV_LIST_SELECTOR = 'page-nav--list';
 const NAV_LIST = document.createElement('ul');
@@ -120,7 +119,3 @@ export default class PageNav extends HTMLElement {
     this.appendChild(navList);
   }
 }
-
-registerCustomElement(import.meta, PageNav, {
-  extends: 'nav'
-});

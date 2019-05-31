@@ -2,7 +2,6 @@ import { attachPluginMap, PLUGINS } from './Plugin.js';
 import Mixin, { applyMixins } from './Mixin.js';
 import { Actions } from '../plugins/ActionPlugin.js';
 import { Attributes } from '../plugins/AttributePlugin.js';
-import { Shadow } from '../plugins/ShadowPlugin.js';
 
 const STATE = Symbol.for('__state__');
 
@@ -63,7 +62,7 @@ class CoreMixin extends Mixin {
 function setupCustomElement(CustomElement, options) {
   const { plugins = [], mixins = [] } = options;
   applyMixins(CustomElement, ...mixins);
-  const INSTANCE_PLUGINS = [Shadow()];
+  const INSTANCE_PLUGINS = [];
 
   class CoreElement extends CustomElement {
     constructor() {

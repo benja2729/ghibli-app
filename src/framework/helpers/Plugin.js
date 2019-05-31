@@ -17,10 +17,10 @@ export default class Plugin {
    * @property {PluginSignature}
    */
   static get SIGNATURE() {
-    return config => ({ plugin: this, config });
+    return (config = {}) => ({ plugin: this, config });
   }
 
-  constructor(host, config = {}) {
+  constructor(host, config) {
     Object.defineProperties(this, {
       host: {
         configurable: false,
