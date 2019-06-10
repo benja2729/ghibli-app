@@ -1,6 +1,6 @@
 @import url('./variables.css');
 
-[is='page-nav'] > .page-nav--list {
+[is='page-nav']>.page-nav--list {
   padding: 0;
   margin: 0;
   list-style: none;
@@ -45,7 +45,7 @@ ghibli-app {
   color: var(--color-text-neutral);
 }
 
-[selected] > .film-list--item {
+[selected]>.film-list--item {
   background-color: var(--color-primary);
 }
 
@@ -56,55 +56,5 @@ ghibli-app {
 [is='ghibli-film-details'] {
   padding-inline-start: var(--spacing-lg);
   padding-inline-end: var(--spacing-lg);
-}
-
-.film-details--header {
-  display: flex;
-  justify-content: space-between;
-  padding-block-end: var(--spacing-sm);
-  margin-block-end: var(--spacing-lg);
-  border-block-end-style: solid;
-  border-block-end-width: 1px;
-  border-block-end-color: var(--color-neutral);
-}
-
-.film-details--title {
-  margin: 0;
-}
-
-.film-details--subheader {
-  align-self: flex-end;
-  color: var(--color-text-neutral);
-}
-
-.film-details--description {
-  font-size: 1.2em;
-}
-
-.film-details--meta {
-  display: flex;
-  flex-wrap: wrap;
-  padding: var(--spacing-md);
-  border-width: var(--spacing-xsm);
-  border-style: double;
-  border-color: var(--color-neutral);
-  background-color: var(--color-neutral--light);
-}
-
-.film-details--meta > .meta-term,
-.film-details--meta > .meta-def {
-}
-
-.film-details--meta > .meta-term {
-  font-weight: bold;
-  flex-basis: 33%;
-}
-
-.film-details--meta > .meta-term:after {
-  content: ':';
-}
-
-.film-details--meta > .meta-def {
-  flex-basis: 66%;
-  margin: 0;
+  width: 100%;
 }

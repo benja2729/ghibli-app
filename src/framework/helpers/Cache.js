@@ -1,5 +1,5 @@
-export default function Cache(getUnset) {
-  class CacheMap extends Map {
+export default function Cache(getUnset, MapLike = Map) {
+  class CacheMap extends MapLike {
     get(key) {
       if (this.has(key)) {
         return super.get(key);

@@ -1,4 +1,4 @@
-import { defineCustomElement } from '../framework/Just.js';
+import { defineCustomElement, CoreElement } from '../framework/Just.js';
 import store from '../store.js';
 
 const { history, location } = window;
@@ -10,7 +10,32 @@ function getPageId() {
   }
 }
 
-export default class GhibliApp extends HTMLElement {
+export default class GhibliApp extends CoreElement {
+  static actions = {
+    PUSH_HISTORY_STATE({ id: currentPage, title }, host) {
+      const state = { currentPage };
+      history.pushState(state, title, `#/page/${currentPage}`);
+    },
+
+    NAV_ITEM_SELECTED(film, host) {
+      host.dispatchAction('PUSH_HISTORY_STATE', film);
+      host.currentFilm = film;
+      host.updateViewedFilm();
+    }
+  };
+
+  static properties = {
+    currentFilm: {
+      get default() {
+        const filmId = getPageId();
+
+        return filmId
+          ? store.films.find(film => film.id === filmId)
+          : store.films[0];
+      }
+    }
+  };
+
   constructor() {
     super();
     window.addEventListener('popstate', event => {
@@ -22,38 +47,11 @@ export default class GhibliApp extends HTMLElement {
   }
 
   get pageNav() {
-    return this.getState('pageNav', () =>
-      this.querySelector('nav[is="page-nav"]')
-    );
+    return this.querySelector('nav[is="page-nav"]');
   }
 
   get filmDetails() {
-    return this.getState('filmDetails', () =>
-      this.querySelector('section[is="ghibli-film-details"]')
-    );
-  }
-
-  get currentFilm() {
-    let film = this.getState('currentFilm');
-
-    if (!film) {
-      const filmId = getPageId();
-
-      if (filmId) {
-        film = store.films.find(film => film.id === filmId);
-      } else {
-        film = store.films[0];
-        this.dispatchAction('PUSH_HISTORY_STATE', film);
-      }
-
-      this.setState('currentFilm', film);
-    }
-
-    return film;
-  }
-
-  set currentFilm(film) {
-    this.setState('currentFilm', film);
+    return this.querySelector('section[is="ghibli-film-details"]');
   }
 
   // TODO: Add a Channel class to allow subscriptions for updates like these
@@ -71,28 +69,9 @@ export default class GhibliApp extends HTMLElement {
 
   async onConnect() {
     const { pageNav } = this;
-    const films = await store.find('films');
-    pageNav.items = films;
+    pageNav.items = store.films;
     this.updateViewedFilm();
   }
 }
-
-GhibliApp.actions = {
-  PUSH_HISTORY_STATE(
-    {
-      detail: { id: currentPage, title }
-    },
-    host
-  ) {
-    const state = { currentPage };
-    history.pushState(state, title, `#/page/${currentPage}`);
-  },
-
-  NAV_ITEM_SELECTED({ detail: film }, host) {
-    host.dispatchAction('PUSH_HISTORY_STATE', film);
-    host.currentFilm = film;
-    host.updateViewedFilm();
-  }
-};
 
 defineCustomElement('ghibli-app', GhibliApp);

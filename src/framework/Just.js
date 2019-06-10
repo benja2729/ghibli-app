@@ -1,23 +1,30 @@
-import defineCustomElement from './helpers/defineCustomElement.js';
 import * as ASSET_REGISTRY from './helpers/AssetRegistry.js';
-import ShadowPlugin from './plugins/ShadowPlugin.js';
+import { mix } from './helpers/Mixin.js';
+import Shadow from './mixins/Shadow.js';
+import JustCore from './mixins/JustCore.js';
 
-export { defineCustomElement, ASSET_REGISTRY };
-export { default as Mixin } from './helpers/Mixin.js';
+export { ASSET_REGISTRY, JustCore as JustCoreMixin };
 export { default as Plugin } from './helpers/Plugin.js';
 
-const { definePod, setPod } = ASSET_REGISTRY;
-const { SIGNATURE } = ShadowPlugin;
-const SHADOW_SIGNATURE = SIGNATURE();
-
-export async function registerComponent(meta, options = {}) {
-  const { plugins = [], template } = options;
-  const pod = definePod(meta, options);
-  const [{ default: CustomElement }] = await setPod(pod.tag, pod);
-
-  if (template) {
-    options.plugins = [SHADOW_SIGNATURE, ...plugins];
+export class CoreElement extends mix(HTMLElement).with(JustCore, Shadow) {}
+export function defineCustomElement(name, HTMLClass, options = {}) {
+  if (!JustCore.detect(HTMLClass)) {
+    throw new TypeError(
+      `[defineCustomElement] Class definition for '${name}' does not implement JustCore`
+    );
   }
 
-  defineCustomElement(pod.tag, CustomElement, options);
+  customElements.define(name, HTMLClass, options);
+}
+
+export async function registerComponent(meta, CustomElement, options = {}) {
+  const { extends: extendsOption } = options;
+  const { tag } = await ASSET_REGISTRY.registerPod(meta, options);
+  const params = [tag, CustomElement];
+
+  if (typeof extendsOption === 'string') {
+    params.push({ extends: extendsOption });
+  }
+
+  defineCustomElement(...params);
 }

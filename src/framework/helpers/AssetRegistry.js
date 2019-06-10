@@ -1,110 +1,121 @@
-const ABSOLUTE_URL_REGEXP = /^\w+:\/\//;
-const ASSET_PROMISES = {};
-const PENDING_ASSET_CALLBACKS = {};
 const REGISTRY = {};
-window.ASSET_REGISTRY = REGISTRY;
-
 const DEFAULT_POD_SIGNATURE = {
-  component: true,
   template: false,
   styles: false
 };
 
-const EXTENSION_MAP = {
-  component: 'js',
-  template: 'html',
-  styles: 'css'
+const TEMPLATE_PROMISES = {
+  promises: {},
+  fetch(source) {
+    const {
+      promises,
+      promises: { [source]: pendingPromise }
+    } = this;
+
+    if (pendingPromise) {
+      return pendingPromise;
+    }
+
+    const promise = fetch(source).then(response => {
+      delete promises[source];
+      return response.text();
+    });
+    promises[source] = promise;
+    return promise;
+  }
 };
 
-function deriveAssetURL(pod, base, podAttr) {
-  const { [podAttr]: path } = pod;
-  const { [podAttr]: extenstion } = EXTENSION_MAP;
+function getRelativePath(href, path) {
+  const url = new URL(path, href);
 
-  if (path === true) {
-    return `${base}/${podAttr}.${extenstion}`;
+  if (/^~/.test(path)) {
+    return `${url.origin}${path.slice(1)}`;
   }
 
-  if (path && !ABSOLUTE_URL_REGEXP.test(path)) {
-    return `${base}/${path}`;
+  return url.toString();
+}
+
+function deriveAssetURL(pod, tag, url, attr) {
+  const { [attr]: path } = pod;
+
+  if (path === true) {
+    const ext = {
+      styles: 'css',
+      template: 'html'
+    }[attr];
+    return getRelativePath(url, `./${tag}.${ext}`);
+  }
+
+  if (typeof path === 'string') {
+    return getRelativePath(url, path);
   }
 
   return path;
 }
 
+function createLink(href) {
+  const link = document.createElement('link');
+
+  Object.assign(link, {
+    type: 'text/css',
+    rel: 'stylesheet',
+    href
+  });
+
+  return link;
+}
+
 function preloadStyles(href) {
   return new Promise((resolve, onerror) => {
-    const link = document.createElement('link');
+    const link = createLink(href);
 
     Object.assign(link, {
-      type: 'text/css',
       as: 'style',
       rel: 'preload',
-      onload(...args) {
-        console.log('loadedStyle: ', href, ...args);
+      onload() {
         resolve(link);
       },
-      onerror,
-      href
+      onerror
     });
 
     document.head.appendChild(link);
   });
 }
 
-function preloadTemplate(href) {
-  // TODO: implement preload template
+async function preloadTemplate({ template: href, tag }) {
+  const templateID = `${tag}--template`;
+  let template = document.getElementById(templateID);
+
+  if (!template) {
+    template = document.createElement('template');
+    template.id = templateID;
+    document.body.appendChild(template);
+    const templateText = await TEMPLATE_PROMISES.fetch(href);
+    template.innerHTML = templateText;
+  }
+
+  return template;
 }
 
-function flushPendingCallbacks(tag, results) {
-  const { [tag]: callbacks } = PENDING_ASSET_CALLBACKS;
+async function preloadAssets(pod) {
+  const { template: src, styles: href } = pod;
+  let template;
 
-  if (Array.isArray(callbacks)) {
-    callbacks.forEach(cb => cb(results));
-    delete PENDING_ASSET_CALLBACKS[tag];
-  }
-}
-
-function preloadAssets({ tag, component, template, styles }) {
-  const promises = [];
-
-  if (typeof component === 'string') {
-    promises.push(import(component));
+  if (typeof src === 'string') {
+    template = await preloadTemplate(pod);
   }
 
-  if (typeof template === 'string') {
-    promises.push(preloadTemplate(template));
+  if (template && typeof href === 'string') {
+    preloadStyles(href);
+    const link = createLink(href);
+    template.content.prepend(link);
   }
 
-  if (typeof styles === 'string') {
-    promises.push(preloadStyles(styles));
-  }
-
-  const promise = Promise.all(promises);
-  const flush = flushPendingCallbacks.bind(null, tag);
-  promise.then(flush, flush);
-
-  ASSET_PROMISES[tag] = promise;
-  return promise;
-}
-
-export function whenAssetsLoaded(tag, callback) {
-  const { [tag]: promise } = ASSET_PROMISES;
-  let { [tag]: callbacks } = PENDING_ASSET_CALLBACKS;
-
-  if (promise) {
-    promise.then(callback, callback);
-  }
-
-  if (!Array.isArray(callbacks)) {
-    PENDING_ASSET_CALLBACKS[tag] = callbacks = [];
-  }
-
-  callbacks.push(callback);
+  return pod;
 }
 
 export function setPod(tag, pod) {
   REGISTRY[tag] = { ...pod };
-  return preloadAssets(pod);
 }
 
 export function getPod(tag) {
@@ -112,26 +123,27 @@ export function getPod(tag) {
 }
 
 export function definePod({ url }, signature = {}) {
-  const urlParts = url.split('/');
-  urlParts.pop();
-  const base = urlParts.join('/');
-  const tag = urlParts.pop();
+  const [tag] = url
+    .split('/')
+    .pop()
+    .split('.');
+
   const pod = {
     ...DEFAULT_POD_SIGNATURE,
     ...signature
   };
-  const derive = deriveAssetURL.bind(null, pod, base);
 
   return {
-    component: derive('component'),
-    template: derive('template'),
-    styles: derive('styles'),
-    tag,
-    base
+    styles: deriveAssetURL(pod, tag, url, 'styles'),
+    template: deriveAssetURL(pod, tag, url, 'template'),
+    component: url,
+    tag
   };
 }
 
-export function registerPod(meta, signature) {
+export async function registerPod(meta, signature) {
   const pod = definePod(meta, signature);
-  return setPod(pod.tag, pod);
+  setPod(pod.tag, pod);
+  await preloadAssets(pod);
+  return pod;
 }

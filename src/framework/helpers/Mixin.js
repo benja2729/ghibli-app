@@ -1,50 +1,129 @@
-import Cache from './Cache.js';
+const DEFINITIONS = Symbol('__mixin_definitions__');
+const IDENTITY = Symbol('__mixin_identity__');
+const REGISTRY = Symbol('__mixin_registry__');
 
-export function applyMixins(SuperClass, ...Mixins) {
-  for (const MixinClass of Mixins) {
-    MixinClass.apply(SuperClass);
+class MixinRegistry extends WeakMap {
+  static get [Symbol.species]() {
+    return this;
+  }
+
+  static isComposedClass(ComposedClass) {
+    return Boolean(
+      ComposedClass && ComposedClass[DEFINITIONS] instanceof WeakSet
+    );
+  }
+
+  constructor(identity) {
+    super();
+
+    Object.defineProperty(this, 'identity', {
+      value: identity
+    });
+  }
+
+  get(SuperClass) {
+    if (!this.has(SuperClass)) {
+      const { identity } = this;
+      const ComposedClass = identity(SuperClass);
+      let { [DEFINITIONS]: identitySet } = ComposedClass;
+
+      if (!identitySet) {
+        identitySet = new WeakSet(SuperClass[DEFINITIONS] || null);
+
+        Object.defineProperty(ComposedClass, DEFINITIONS, {
+          value: identitySet
+        });
+      }
+
+      identitySet.add(identity);
+      this.set(SuperClass, ComposedClass);
+    }
+
+    return super.get(SuperClass);
+  }
+
+  set(SuperClass, ComposedClass) {
+    if (this.hasIdentity(ComposedClass)) {
+      super.set(SuperClass, ComposedClass);
+    }
+  }
+
+  hasIdentity(SuperClass) {
+    if (!MixinRegistry.isComposedClass(SuperClass)) {
+      return false;
+    }
+
+    const { identity } = this;
+    const { [DEFINITIONS]: identitySet } = SuperClass;
+    return identitySet.has(identity);
+  }
+
+  detect(SuperClass) {
+    let Parent = SuperClass;
+
+    while (Parent) {
+      if (this.hasIdentity(Parent)) {
+        return true;
+      }
+
+      Parent = Object.getPrototypeOf(Parent);
+    }
+
+    return false;
   }
 }
 
-const DESCRIPTOR_CACHE = Cache(MixinClass => {
-  const Parent = Object.getPrototypeOf(MixinClass);
-  const mixinDescs = Object.getOwnPropertyDescriptors(MixinClass.prototype);
+class MixinInterface {
+  constructor(SuperClass) {
+    this.SuperClass = SuperClass;
+  }
 
-  if (Parent !== Mixin) {
-    const parentDescs = DESCRIPTOR_CACHE.get(Parent);
+  with(...mixins) {
+    return mixins.reduce(
+      (ComposedClass, mixin) => mixin(ComposedClass),
+      this.SuperClass
+    );
+  }
+}
 
-    for (const [key, desc] of Object.entries(parentDescs)) {
-      if (!mixinDescs[key]) {
-        mixinDescs[key] = desc;
-      }
+export function mix(SuperClass) {
+  return new MixinInterface(SuperClass);
+}
+
+export function getMixinMetadata(mixin) {
+  const { [REGISTRY]: registry, [IDENTITY]: identity } = mixin;
+  return { registry, identity };
+}
+
+export default function Mixin(identity) {
+  const registry = new MixinRegistry(identity);
+
+  function mixin(SuperClass) {
+    if (registry.detect(SuperClass)) {
+      return SuperClass;
     }
+
+    return registry.get(SuperClass);
   }
 
-  delete mixinDescs.constructor;
-  return mixinDescs;
-});
-
-export default class Mixin {
-  static get descriptors() {
-    return DESCRIPTOR_CACHE.get(this);
-  }
-
-  static applyToClass(SuperClass) {
-    const { prototype: proto } = SuperClass;
-    const { descriptors } = this;
-
-    for (const [key, desc] of Object.entries(descriptors)) {
-      if (proto.hasOwnProperty(key)) {
-        throw new Error(
-          `[Mixin] Cannot overwrite '${key}' from ${this} onto ${SuperClass}`
-        );
-      } else {
-        Object.defineProperty(proto, key, desc);
-      }
+  const detectInstance = ({ constructor }) => registry.detect(constructor);
+  Object.defineProperties(mixin, {
+    [Symbol.hasInstance]: {
+      value: detectInstance
+    },
+    [IDENTITY]: {
+      value: identity
+    },
+    [REGISTRY]: {
+      value: registry
+    },
+    detect: {
+      value: SuperClass => registry.detect(SuperClass)
+    },
+    detectInstance: {
+      value: detectInstance
     }
-  }
+  });
 
-  constructor() {
-    throw new Error('[Mixin] You cannot create an instance of a Mixin');
-  }
+  return mixin;
 }
